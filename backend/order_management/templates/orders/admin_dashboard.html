@@ -1,0 +1,489 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de bord administrateur{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.nav-tabs .nav-link {
+    color: #6c757d;
+}
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    font-weight: 500;
+}
+.table th {
+    font-weight: 500;
+}
+.badge {
+    font-weight: 500;
+}
+.progress-bar {
+    width: var(--progress-width);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4 text-primary">Tableau de bord administrateur</h1>
+    
+    <!-- Statistiques principales -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="display-4 text-primary mb-2">{{ confirmation_rate }}%</div>
+                    <h6 class="text-muted">Taux de confirmation</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-2">{{ total_articles }}</div>
+                    <h6 class="text-muted">Articles commandés</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="display-4 text-info mb-2">{{ total_value|floatformat:2 }} DH</div>
+                    <h6 class="text-muted">Valeur totale</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="display-4 text-warning mb-2">{{ confirmed_value|floatformat:2 }} DH</div>
+                    <h6 class="text-muted">Valeur confirmée</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques détaillées -->
+    <div class="row mb-4">
+        <!-- Commandes par statut -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100 border-0">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">Statut des commandes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for status in orders_by_status %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center p-3 rounded {% if status.status == 'non_affectee' %}bg-warning bg-opacity-10{% elif status.status == 'affectee' %}bg-info bg-opacity-10{% elif status.status == 'en_cours_confirmation' %}bg-primary bg-opacity-10{% elif status.status == 'confirmee' %}bg-success bg-opacity-10{% elif status.status == 'erronnee' %}bg-danger bg-opacity-10{% elif status.status == 'doublon' %}bg-secondary bg-opacity-10{% else %}bg-light{% endif %}">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">
+                                        {% if status.status == 'non_affectee' %}
+                                            Non affectées
+                                        {% elif status.status == 'affectee' %}
+                                            Affectées
+                                        {% elif status.status == 'en_cours_confirmation' %}
+                                            En cours de confirmation
+                                        {% elif status.status == 'confirmee' %}
+                                            Confirmées
+                                        {% elif status.status == 'erronnee' %}
+                                            Erronées
+                                        {% elif status.status == 'doublon' %}
+                                            Doublons
+                                        {% endif %}
+                                    </h6>
+                                </div>
+                                <div class="ms-3">
+                                    <span class="badge {% if status.status == 'non_affectee' %}bg-warning{% elif status.status == 'affectee' %}bg-info{% elif status.status == 'en_cours_confirmation' %}bg-primary{% elif status.status == 'confirmee' %}bg-success{% elif status.status == 'erronnee' %}bg-danger{% elif status.status == 'doublon' %}bg-secondary{% else %}bg-primary{% endif %} rounded-pill">{{ status.count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance des opérateurs -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100 border-0">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">Performance des opérateurs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Opérateur</th>
+                                    <th>Confirmées</th>
+                                    <th>Total</th>
+                                    <th>Taux</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for operator in operators_stats %}
+                                <tr>
+                                    <td>{{ operator.username }}</td>
+                                    <td>{{ operator.confirmed_orders }}</td>
+                                    <td>{{ operator.total_orders }}</td>
+                                    <td style="width: 30%">
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if operator.confirmation_rate >= 80 %}bg-success{% elif operator.confirmation_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 role="progressbar" 
+                                                 aria-valuenow="{{ operator.confirmation_rate }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100"
+                                                 style="width: {{ operator.confirmation_rate }}%">
+                                                {{ operator.confirmation_rate }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Aucun opérateur actif</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques temporelles -->
+    <div class="row mb-4">
+        <!-- Nombre de commandes par période -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 border-0">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-primary">Nombre de commandes</h5>
+                        <select class="form-select form-select-sm" id="ordersCountChartPeriod">
+                            <option value="daily">Journalier</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly">Mensuel</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="ordersCountChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valeur des commandes par période -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 border-0">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-primary">Valeur des commandes</h5>
+                        <select class="form-select form-select-sm" id="ordersValueChartPeriod">
+                            <option value="daily">Journalier</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly">Mensuel</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="ordersValueChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Articles par période -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 border-0">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-primary">Nombre d'articles</h5>
+                        <select class="form-select form-select-sm" id="articlesChartPeriod">
+                            <option value="daily">Journalier</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly">Mensuel</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="articlesChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commandes récentes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-primary">Commandes récentes</h5>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-list"></i> Voir toutes
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>N° Commande</th>
+                                    <th>Client</th>
+                                    <th>Produit</th>
+                                    <th>Statut</th>
+                                    <th>Opérateur</th>
+                                    <th>Date création</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>{{ order.order_number }}</td>
+                                    <td>{{ order.client_name }}</td>
+                                    <td>{{ order.product }}</td>
+                                    <td>
+                                        <span class="badge {% if order.status == 'non_affectee' %}bg-warning{% elif order.status == 'affectee' %}bg-info{% elif order.status == 'erronee' %}bg-danger{% elif order.status == 'doublon' %}bg-secondary{% elif order.status == 'a_confirmer' %}bg-primary{% elif order.status == 'en_cours_confirmation' %}bg-info{% elif order.status == 'confirmee' %}bg-success{% elif order.status == 'annulee' %}bg-danger{% endif %}">
+                                            {% if order.status == 'non_affectee' %}
+                                                Non affectée
+                                            {% elif order.status == 'affectee' %}
+                                                Affectée
+                                            {% elif order.status == 'erronee' %}
+                                                Erronée
+                                            {% elif order.status == 'doublon' %}
+                                                Doublon
+                                            {% elif order.status == 'a_confirmer' %}
+                                                À confirmer
+                                            {% elif order.status == 'en_cours_confirmation' %}
+                                                En cours
+                                            {% elif order.status == 'confirmee' %}
+                                                Confirmée
+                                            {% elif order.status == 'annulee' %}
+                                                Annulée
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.operator.user.username|default:"-" }}</td>
+                                    <td>{{ order.creation_date|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'orders:order_detail' order.yoozak_id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">Aucune commande récente</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration des graphiques
+    const chartConfig = {
+        type: 'bar',
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.dataset.yAxisID === 'y1') {
+                                label += context.parsed.y.toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' });
+                            } else {
+                                label += context.parsed.y;
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true
+                    }
+                }
+            }
+        }
+    };
+
+    // Données pour les graphiques
+    const ordersData = {
+        daily: {
+            labels: [{% for stat in orders_by_day %}'{{ stat.date|date:"d/m/Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            count: [{% for stat in orders_by_day %}{{ stat.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            value: [{% for stat in orders_by_day %}{{ stat.value }}{% if not forloop.last %}, {% endif %}{% endfor %}]
+        },
+        weekly: {
+            labels: [{% for stat in orders_by_week %}'Semaine du {{ stat.week|date:"d/m/Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            count: [{% for stat in orders_by_week %}{{ stat.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            value: [{% for stat in orders_by_week %}{{ stat.value }}{% if not forloop.last %}, {% endif %}{% endfor %}]
+        },
+        monthly: {
+            labels: [{% for stat in orders_by_month %}'{{ stat.month|date:"F Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            count: [{% for stat in orders_by_month %}{{ stat.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            value: [{% for stat in orders_by_month %}{{ stat.value }}{% if not forloop.last %}, {% endif %}{% endfor %}]
+        }
+    };
+
+    const articlesData = {
+        daily: {
+            labels: [{% for stat in articles_by_day %}'{{ stat.date|date:"d/m/Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            data: [{% for stat in articles_by_day %}{{ stat.total_articles }}{% if not forloop.last %}, {% endif %}{% endfor %}]
+        },
+        weekly: {
+            labels: [{% for stat in articles_by_week %}'Semaine du {{ stat.week|date:"d/m/Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            data: [{% for stat in articles_by_week %}{{ stat.total_articles }}{% if not forloop.last %}, {% endif %}{% endfor %}]
+        },
+        monthly: {
+            labels: [{% for stat in articles_by_month %}'{{ stat.month|date:"F Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            data: [{% for stat in articles_by_month %}{{ stat.total_articles }}{% if not forloop.last %}, {% endif %}{% endfor %}]
+        }
+    };
+
+    // Création du graphique du nombre de commandes
+    const ordersCountCtx = document.getElementById('ordersCountChart').getContext('2d');
+    const ordersCountChart = new Chart(ordersCountCtx, {
+        ...chartConfig,
+        data: {
+            labels: ordersData.daily.labels,
+            datasets: [{
+                label: 'Nombre de commandes',
+                data: ordersData.daily.count,
+                backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                borderColor: 'rgb(13, 110, 253)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartConfig.options,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Nombre de commandes'
+                    }
+                }
+            }
+        }
+    });
+
+    // Création du graphique de la valeur des commandes
+    const ordersValueCtx = document.getElementById('ordersValueChart').getContext('2d');
+    const ordersValueChart = new Chart(ordersValueCtx, {
+        ...chartConfig,
+        data: {
+            labels: ordersData.daily.labels,
+            datasets: [{
+                label: 'Valeur des commandes',
+                data: ordersData.daily.value,
+                backgroundColor: 'rgba(255, 193, 7, 0.5)',
+                borderColor: 'rgb(255, 193, 7)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartConfig.options,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Valeur (DH)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Création du graphique des articles
+    const articlesCtx = document.getElementById('articlesChart').getContext('2d');
+    const articlesChart = new Chart(articlesCtx, {
+        ...chartConfig,
+        data: {
+            labels: articlesData.daily.labels,
+            datasets: [{
+                label: 'Nombre d\'articles',
+                data: articlesData.daily.data,
+                backgroundColor: 'rgba(25, 135, 84, 0.5)',
+                borderColor: 'rgb(25, 135, 84)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartConfig.options,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Nombre d\'articles'
+                    }
+                }
+            }
+        }
+    });
+
+    // Gestion des changements de période pour le nombre de commandes
+    document.getElementById('ordersCountChartPeriod').addEventListener('change', function(e) {
+        const period = e.target.value;
+        ordersCountChart.data.labels = ordersData[period].labels;
+        ordersCountChart.data.datasets[0].data = ordersData[period].count;
+        ordersCountChart.update();
+    });
+
+    // Gestion des changements de période pour la valeur des commandes
+    document.getElementById('ordersValueChartPeriod').addEventListener('change', function(e) {
+        const period = e.target.value;
+        ordersValueChart.data.labels = ordersData[period].labels;
+        ordersValueChart.data.datasets[0].data = ordersData[period].value;
+        ordersValueChart.update();
+    });
+
+    // Gestion des changements de période pour les articles
+    document.getElementById('articlesChartPeriod').addEventListener('change', function(e) {
+        const period = e.target.value;
+        articlesChart.data.labels = articlesData[period].labels;
+        articlesChart.data.datasets[0].data = articlesData[period].data;
+        articlesChart.update();
+    });
+
+    // Mise à jour des barres de progression
+    document.querySelectorAll('.progress-bar').forEach(bar => {
+        const rate = bar.getAttribute('aria-valuenow');
+        bar.style.setProperty('--progress-width', rate + '%');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animations personnalisées */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Styles globaux */
+body {
+  @apply antialiased;
+}
+
+/* Amélioration des transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Amélioration du défilement */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Style des barres de défilement */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+@layer base {
+  html {
+    font-family: 'Ladoga', 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Ladoga', 'Inter', sans-serif;
+    font-weight: 600;
+  }
+}

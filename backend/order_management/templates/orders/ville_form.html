@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if ville %}Modifier la ville{% else %}Nouvelle ville{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fee-display {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        min-width: 100px;
+        text-align: right;
+    }
+    .fee-edit-mode {
+        display: none;
+    }
+    .fee-display-mode {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% if ville %}Modifier la ville{% else %}Nouvelle ville{% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="villeForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="fee_modified" name="fee_modified" value="0">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom de la ville</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ ville.name|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="region" class="form-label">Région</label>
+                            <select class="form-select" id="region" name="region" required>
+                                <option value="">Sélectionnez une région</option>
+                                {% for region in regions %}
+                                <option value="{{ region.id }}" 
+                                        {% if ville.region.id == region.id %}selected{% endif %}>
+                                    {{ region.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="delivery_delay" class="form-label">Délai de livraison</label>
+                            <input type="text" class="form-control" id="delivery_delay" name="delivery_delay"
+                                   value="{{ ville.delivery_delay|default:'' }}" 
+                                   placeholder="Ex: 24-48h">
+                        </div>
+                        <div class="mb-3">
+                            <label for="delivery_fee" class="form-label">Frais de livraison (DH)</label>
+                            <div class="fee-display-mode">
+                                <span class="fee-display" id="feeDisplay">
+                                    {{ ville.delivery_fee|default:"0.00" }} DH
+                                </span>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleFeeEdit()">
+                                    <i class="bi bi-pencil"></i> Modifier
+                                </button>
+                            </div>
+                            <div class="fee-edit-mode">
+                                <input type="number" class="form-control" id="delivery_fee" name="delivery_fee"
+                                       value="{{ ville.delivery_fee|default:'0' }}" step="0.01" min="0">
+                                <div class="form-text">Laissez 0 pour la livraison gratuite</div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'orders:region_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let originalFee = "{{ ville.delivery_fee|default:'0' }}";
+let isEditing = false;
+
+function toggleFeeEdit() {
+    const displayMode = document.querySelector('.fee-display-mode');
+    const editMode = document.querySelector('.fee-edit-mode');
+    const feeInput = document.getElementById('delivery_fee');
+    
+    if (!isEditing) {
+        // Passer en mode édition
+        displayMode.style.display = 'none';
+        editMode.style.display = 'block';
+        feeInput.value = originalFee;
+        isEditing = true;
+    } else {
+        // Revenir en mode affichage
+        displayMode.style.display = 'flex';
+        editMode.style.display = 'none';
+        originalFee = feeInput.value;
+        document.getElementById('feeDisplay').textContent = originalFee + ' DH';
+        isEditing = false;
+    }
+}
+
+// Initialiser l'affichage
+document.addEventListener('DOMContentLoaded', function() {
+    const displayMode = document.querySelector('.fee-display-mode');
+    const editMode = document.querySelector('.fee-edit-mode');
+    const feeInput = document.getElementById('delivery_fee');
+    
+    // Si c'est une nouvelle ville, afficher directement le mode édition
+    if (!document.querySelector('#feeDisplay').textContent.includes('0.00')) {
+        displayMode.style.display = 'flex';
+        editMode.style.display = 'none';
+        isEditing = false;
+    } else {
+        displayMode.style.display = 'none';
+        editMode.style.display = 'block';
+        isEditing = true;
+    }
+
+    // Écouter les changements sur le champ de frais
+    feeInput.addEventListener('change', function() {
+        document.getElementById('fee_modified').value = '1';
+    });
+});
+
+// Gérer la soumission du formulaire
+document.getElementById('villeForm').addEventListener('submit', function(e) {
+    const feeInput = document.getElementById('delivery_fee');
+    const feeModified = document.getElementById('fee_modified');
+    
+    // Si le frais n'a pas été modifié, supprimer le champ du formulaire
+    if (feeModified.value === '0') {
+        feeInput.removeAttribute('name');
+    }
+});
+</script>
+{% endblock %} 

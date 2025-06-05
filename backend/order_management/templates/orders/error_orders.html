@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Commandes à traiter{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4">Commandes à traiter</h1>
+    
+    <!-- Filtres -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Type de commande</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Tous les types</option>
+                        <option value="erronnee" {% if selected_status == 'erronnee' %}selected{% endif %}>Erronées</option>
+                        <option value="doublon" {% if selected_status == 'doublon' %}selected{% endif %}>Doublons</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                    <a href="{% url 'orders:error_orders' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Liste des commandes -->
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>N° Commande</th>
+                            <th>Client</th>
+                            <th>Téléphone</th>
+                            <th>Ville</th>
+                            <th>Produit</th>
+                            <th>Quantité</th>
+                            <th>Prix</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.order_number }}</td>
+                            <td>{{ order.client_name }}</td>
+                            <td>{{ order.phone }}</td>
+                            <td>{{ order.city }}</td>
+                            <td>{{ order.product }}</td>
+                            <td>{{ order.quantity }}</td>
+                            <td>{{ order.price }} DH</td>
+                            <td>
+                                {% if order.status == 'erronnee' %}
+                                <span class="badge bg-danger">Erronée</span>
+                                {% elif order.status == 'doublon' %}
+                                <span class="badge bg-secondary">Doublon</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.creation_date|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'orders:correct_order' order.yoozak_id %}" 
+                                       class="btn btn-warning btn-sm" 
+                                       title="Corriger la commande">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-danger btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#cancelModal{{ order.yoozak_id }}"
+                                            title="Annuler la commande">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Modal d'annulation -->
+                                <div class="modal fade" id="cancelModal{{ order.yoozak_id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Annuler la commande</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="post" action="{% url 'orders:cancel_order' order.yoozak_id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <p>Êtes-vous sûr de vouloir annuler la commande {{ order.order_number }} ?</p>
+                                                    <div class="mb-3">
+                                                        <label for="cancellation_reason" class="form-label">Motif de l'annulation *</label>
+                                                        <select class="form-select" id="cancellation_reason" name="cancellation_reason" required>
+                                                            <option value="">Sélectionnez un motif</option>
+                                                            <option value="numero_incorrect">Numéro de téléphone incorrect</option>
+                                                            <option value="client_absent">Client absent</option>
+                                                            <option value="adresse_incorrecte">Adresse incorrecte</option>
+                                                            <option value="produit_indisponible">Produit indisponible</option>
+                                                            <option value="commande_doublon">Commande en doublon</option>
+                                                            <option value="autre">Autre raison</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3" id="other_reason_div" style="display: none;">
+                                                        <label for="other_reason" class="form-label">Précisez la raison *</label>
+                                                        <textarea class="form-control" id="other_reason" name="other_reason" 
+                                                                  rows="3" placeholder="Veuillez préciser le motif d'annulation..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                                    <button type="submit" class="btn btn-danger">Confirmer l'annulation</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center">Aucune commande à traiter</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Afficher/masquer le champ de texte pour "Autre raison"
+    document.querySelectorAll('select[id^="cancellation_reason"]').forEach(select => {
+        select.addEventListener('change', function() {
+            const otherReasonDiv = this.closest('.modal-body').querySelector('#other_reason_div');
+            const otherReasonTextarea = otherReasonDiv.querySelector('textarea');
+            
+            if (this.value === 'autre') {
+                otherReasonDiv.style.display = 'block';
+                otherReasonTextarea.required = true;
+            } else {
+                otherReasonDiv.style.display = 'none';
+                otherReasonTextarea.required = false;
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %} 

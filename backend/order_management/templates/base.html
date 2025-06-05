@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestion des Commandes{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <style>
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+        }
+        .sidebar .nav-link {
+            color: #333;
+            padding: 0.5rem 1rem;
+        }
+        .sidebar .nav-link.active {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #e9ecef;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .card-dashboard {
+            transition: all 0.3s;
+        }
+        .card-dashboard:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Barre de navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'orders:admin_dashboard' %}">Yoozak</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right"></i> Déconnexion
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            {% if user.is_authenticated %}
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        {% if user.is_staff %}
+                        <!-- Menu Administrateur -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" 
+                               href="{% url 'orders:admin_dashboard' %}">
+                                <i class="bi bi-speedometer2"></i> Tableau de bord
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'order_list' %}active{% endif %}" 
+                               href="{% url 'orders:order_list' %}">
+                                <i class="bi bi-list-ul"></i> Liste des commandes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'error_orders' %}active{% endif %}" 
+                               href="{% url 'orders:error_orders' %}">
+                                <i class="bi bi-exclamation-triangle"></i> Commandes à traiter
+                                {% if error_orders_count > 0 %}
+                                <span class="badge bg-danger">{{ error_orders_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'cancelled_orders' %}active{% endif %}" 
+                               href="{% url 'orders:cancelled_orders' %}">
+                                <i class="bi bi-x-circle"></i> Commandes annulées
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'region_list' %}active{% endif %}" 
+                               href="{% url 'orders:region_list' %}">
+                                <i class="bi bi-geo-alt"></i> Régions et villes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'confirmed_orders_list' %}active{% endif %}" 
+                               href="{% url 'orders:confirmed_orders_list' %}">
+                                <i class="bi bi-check-circle"></i> Commandes confirmées
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'bulk_assign' %}active{% endif %}" 
+                               href="{% url 'orders:bulk_assign' %}">
+                                <i class="bi bi-people"></i> Affectation multiple
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'operator_create' %}active{% endif %}" href="{% url 'accounts:operator_create' %}">
+                                <i class="bi bi-person-plus"></i> Ajouter un opérateur
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'operator_list' %}active{% endif %}" 
+                               href="{% url 'accounts:operator_list' %}">
+                                <i class="bi bi-person-badge"></i> Gestion des opérateurs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'stock_list' %}active{% endif %}" 
+                               href="{% url 'inventory:stock_list' %}">
+                                <i class="bi bi-box-seam"></i> Gestion du stock
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                               href="{% url 'sync:dashboard' %}">
+                                <i class="bi bi-cloud-arrow-down"></i> Synchronisation
+                            </a>
+                        </li>
+                        {% elif user.operator_profile %}
+                        <!-- Menu Opérateur -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'operator_dashboard' %}active{% endif %}" 
+                               href="{% url 'accounts:operator_dashboard' %}">
+                                <i class="bi bi-speedometer2"></i> Tableau de bord
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'operator_orders' %}active{% endif %}" 
+                               href="{% url 'orders:operator_orders' %}">
+                                <i class="bi bi-list-check"></i> Mes commandes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'check_stock' %}active{% endif %}" 
+                               href="{% url 'orders:check_stock' %}">
+                                <i class="bi bi-search"></i> Consulter le stock
+                            </a>
+                        </li>
+                        {% elif user.is_logistics %}
+                        <!-- Menu Logistique -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'logistics_dashboard' %}active{% endif %}" 
+                               href="{% url 'orders:logistics_dashboard' %}">
+                                <i class="bi bi-truck"></i> Commandes confirmées
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Contenu principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Messages -->
+                {% if messages %}
+                <div class="messages mt-3">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Contenu de la page -->
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

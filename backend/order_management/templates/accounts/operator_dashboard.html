@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de bord opérateur{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4">Tableau de bord opérateur</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Mes commandes à traiter</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>N° Commande</th>
+                                    <th>Client</th>
+                                    <th>Téléphone</th>
+                                    <th>Produit</th>
+                                    <th>Prix</th>
+                                    <th>Statut</th>
+                                    <th>Date création</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.order_number }}</td>
+                                    <td>{{ order.client_name }}</td>
+                                    <td>{{ order.phone }}</td>
+                                    <td>{{ order.product }}</td>
+                                    <td>{{ order.price }} DH</td>
+                                    <td>
+                                        {% if order.status == 'affectee' %}
+                                            <span class="badge bg-info">Affectée</span>
+                                        {% elif order.status == 'a_confirmer' %}
+                                            <span class="badge bg-primary">À confirmer</span>
+                                        {% elif order.status == 'en_cours_confirmation' %}
+                                            <span class="badge bg-warning">En cours</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.creation_date|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'orders:order_confirm' order.yoozak_id %}" class="btn btn-sm btn-success">
+                                                <i class="bi bi-check-circle"></i> Confirmer
+                                            </a>
+                                            <a href="{% url 'orders:order_edit' order.yoozak_id %}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-pencil"></i> Modifier
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">Aucune commande à traiter</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Actions rapides</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'orders:operator_orders' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-list-check"></i> Voir toutes mes commandes
+                        </a>
+                        <a href="{% url 'orders:check_stock' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i> Consulter le stock
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
