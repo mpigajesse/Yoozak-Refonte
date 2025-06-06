@@ -200,8 +200,32 @@ def admin_dashboard(request):
     orders_progress = min((orders_today / orders_target) * 100, 100)
     
     # Opérateurs
-    active_operators = Operator.objects.filter(is_active=True)
+    active_operators = Operator.objects.filter(is_active=True).select_related('user')
     total_operators = Operator.objects.count()
+    
+    # Préparer les données des opérateurs avec leurs photos
+    operators_with_photos = []
+    for operator in active_operators:
+        photo_url = None
+        initials = operator.get_initials  # Property, pas une méthode
+        
+        # Essayer d'abord le profil opérateur, puis le profil utilisateur général
+        try:
+            if hasattr(operator, 'get_profile_photo_url') and operator.get_profile_photo_url:
+                photo_url = operator.get_profile_photo_url
+            elif hasattr(operator.user, 'user_profile') and operator.user.user_profile.get_profile_photo_url:
+                photo_url = operator.user.user_profile.get_profile_photo_url
+        except AttributeError:
+            # En cas d'erreur, on laisse photo_url à None
+            pass
+        
+        operators_with_photos.append({
+            'id': operator.id,
+            'username': operator.user.username,
+            'display_name': operator.user.get_full_name() or operator.user.username,
+            'initials': initials,
+            'photo_url': photo_url
+        })
     
     # Statistiques supplémentaires
     total_orders = Order.objects.count()
@@ -277,7 +301,7 @@ def admin_dashboard(request):
         'orders_progress': orders_progress,
         'active_operators': active_operators.count(),
         'total_operators': total_operators,
-        'active_operator_list': active_operators,
+        'active_operator_list': operators_with_photos,
         'total_orders': total_orders,
         'confirmed_orders': confirmed_orders,
         'total_value': total_value,
@@ -287,7 +311,9 @@ def admin_dashboard(request):
         'chart_labels': chart_labels_json,
         'grouped_activities': first_page_grouped,
         'activities_paginator': paginator,
-        'current_date': timezone.now()
+        'current_date': timezone.now(),
+        'active_menu': 'home',
+        'active_page': 'dashboard'
     }
     
     return render(request, 'order_management/home.html', context)

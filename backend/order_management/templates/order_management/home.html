@@ -1,4 +1,4 @@
-{% extends 'order_management/admin_base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}Tableau de bord - Yoozak{% endblock %}
 
@@ -79,11 +79,18 @@
             <!-- Liste des opérateurs actifs -->
             <div class="mt-4 flex -space-x-2 overflow-hidden">
                 {% for operator in active_operator_list %}
-                <div class="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-gray-200 flex items-center justify-center" title="{{ operator.username }}">
-                    <span class="text-xs font-medium text-gray-600">{{ operator.initials }}</span>
-                        </div>
+                <div class="inline-block h-10 w-10 rounded-full ring-2 ring-white overflow-hidden bg-gray-200 flex items-center justify-center hover:z-10 transition-transform hover:scale-110" title="{{ operator.display_name }}">
+                    {% if operator.photo_url %}
+                        <img src="{{ operator.photo_url }}" alt="{{ operator.display_name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <span class="text-xs font-medium text-gray-600">{{ operator.initials }}</span>
+                    {% endif %}
+                </div>
                 {% endfor %}
-                        </div>
+                {% if active_operator_list|length == 0 %}
+                <div class="text-xs text-gray-500">Aucun opérateur actif</div>
+                {% endif %}
+            </div>
                         </div>
 
         <!-- Carte : Taux de confirmation -->
@@ -220,6 +227,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
 <!-- Script pour le graphique -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {

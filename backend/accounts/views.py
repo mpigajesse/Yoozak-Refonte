@@ -4,12 +4,17 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import Operator
 from orders.models import Order
-from django.contrib.auth import login, authenticate, logout
-from .forms import LoginForm
+from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
+from .forms import LoginForm, OperatorProfileForm, ChangePasswordForm, UserProfileForm
+from .models import UserProfile
 
 def is_admin(user):
     """Vérifie si l'utilisateur est un administrateur"""
     return user.is_authenticated and user.is_staff
+
+def is_operator(user):
+    """Vérifie si l'utilisateur est un opérateur actif"""
+    return user.is_authenticated and hasattr(user, 'operator_profile') and user.operator_profile.is_active
 
 @login_required
 @user_passes_test(is_admin)
@@ -117,6 +122,176 @@ def operator_delete(request, operator_id):
         'operator': operator,
     }
     return render(request, 'accounts/operator_confirm_delete.html', context)
+
+@login_required
+@user_passes_test(is_operator)
+def operator_profile(request):
+    """Page de profil pour l'opérateur"""
+    try:
+        operator = request.user.operator_profile
+    except Operator.DoesNotExist:
+        messages.error(request, "Votre compte utilisateur n'est pas associé à un profil opérateur.")
+        return redirect('order_management:operator_dashboard')
+    
+    # Calculer quelques statistiques
+    total_orders = Order.objects.filter(operator=operator).count()
+    confirmed_orders = Order.objects.filter(operator=operator, status='confirmee').count()
+    confirmation_rate = 0
+    if total_orders > 0:
+        confirmation_rate = (confirmed_orders / total_orders) * 100
+
+    context = {
+        'operator': operator,
+        'user': request.user,
+        'total_orders': total_orders,
+        'confirmed_orders': confirmed_orders,
+        'confirmation_rate': round(confirmation_rate, 1),
+        'active_page': 'profile'
+    }
+    return render(request, 'accounts/operator_profile.html', context)
+
+@login_required
+@user_passes_test(is_operator)
+def operator_profile_edit(request):
+    """Modification du profil opérateur"""
+    try:
+        operator = request.user.operator_profile
+    except Operator.DoesNotExist:
+        messages.error(request, "Votre compte utilisateur n'est pas associé à un profil opérateur.")
+        return redirect('order_management:operator_dashboard')
+    
+    if request.method == 'POST':
+        form = OperatorProfileForm(request.POST, request.FILES, user=request.user, operator=operator)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Votre profil a été mis à jour avec succès.")
+            return redirect('accounts:operator_profile')
+    else:
+        form = OperatorProfileForm(user=request.user, operator=operator)
+    
+    context = {
+        'form': form,
+        'operator': operator,
+        'active_page': 'profile'
+    }
+    return render(request, 'accounts/operator_profile_edit.html', context)
+
+@login_required
+@user_passes_test(is_operator)
+def operator_change_password(request):
+    """Changement de mot de passe pour l'opérateur"""
+    try:
+        operator = request.user.operator_profile
+    except Operator.DoesNotExist:
+        messages.error(request, "Votre compte utilisateur n'est pas associé à un profil opérateur.")
+        return redirect('order_management:operator_dashboard')
+    
+    if request.method == 'POST':
+        form = ChangePasswordForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            # Maintenir la session après le changement de mot de passe
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "Votre mot de passe a été modifié avec succès.")
+            return redirect('accounts:operator_profile')
+    else:
+        form = ChangePasswordForm(request.user)
+    
+    context = {
+        'form': form,
+        'operator': operator,
+        'active_page': 'profile'
+    }
+    return render(request, 'accounts/operator_change_password.html', context)
+
+@login_required
+def user_profile(request):
+    """Page de profil pour tous les utilisateurs (admin et opérateurs)"""
+    # Créer ou récupérer le profil utilisateur
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Calculer quelques statistiques selon le type d'utilisateur
+    stats = {}
+    if request.user.is_staff:
+        # Statistiques pour les administrateurs
+        stats = {
+            'total_orders': Order.objects.count(),
+            'confirmed_orders': Order.objects.filter(status='confirmee').count(),
+            'total_operators': Operator.objects.filter(is_active=True).count(),
+            'role': 'Administrateur'
+        }
+    else:
+        # Statistiques pour les opérateurs
+        try:
+            operator = request.user.operator_profile
+            total_orders = Order.objects.filter(operator=operator).count()
+            confirmed_orders = Order.objects.filter(operator=operator, status='confirmee').count()
+            confirmation_rate = 0
+            if total_orders > 0:
+                confirmation_rate = (confirmed_orders / total_orders) * 100
+            
+            stats = {
+                'total_orders': total_orders,
+                'confirmed_orders': confirmed_orders,
+                'confirmation_rate': round(confirmation_rate, 1),
+                'role': 'Opérateur'
+            }
+        except Operator.DoesNotExist:
+            stats = {
+                'total_orders': 0,
+                'confirmed_orders': 0,
+                'confirmation_rate': 0,
+                'role': 'Utilisateur'
+            }
+
+    context = {
+        'user_profile': user_profile,
+        'stats': stats,
+        'active_page': 'profile'
+    }
+    return render(request, 'accounts/user_profile.html', context)
+
+@login_required
+def user_profile_edit(request):
+    """Modification du profil utilisateur"""
+    # Créer ou récupérer le profil utilisateur
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Votre profil a été mis à jour avec succès.")
+            return redirect('accounts:user_profile')
+    else:
+        form = UserProfileForm(instance=user_profile, user=request.user)
+    
+    context = {
+        'form': form,
+        'user_profile': user_profile,
+        'active_page': 'profile'
+    }
+    return render(request, 'accounts/user_profile_edit.html', context)
+
+@login_required
+def user_change_password(request):
+    """Changement de mot de passe pour tous les utilisateurs"""
+    if request.method == 'POST':
+        form = ChangePasswordForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            # Maintenir la session après le changement de mot de passe
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "Votre mot de passe a été modifié avec succès.")
+            return redirect('accounts:user_profile')
+    else:
+        form = ChangePasswordForm(request.user)
+    
+    context = {
+        'form': form,
+        'active_page': 'profile'
+    }
+    return render(request, 'accounts/user_change_password.html', context)
 
 def logout_view(request):
     """Vue pour la déconnexion"""
