@@ -1,44 +1,77 @@
 {% extends 'base.html' %}
 
-{% block title %}Accueil{% endblock %}
+{% block title %}Tableau de Bord{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
-            <div class="card shadow-sm mt-5">
-                <div class="card-body text-center">
-                    <h1 class="display-4 mb-4">Bienvenue sur le système de gestion des commandes</h1>
-                    
-                    {% if user.is_staff %}
-                        <p class="lead mb-4">Vous êtes connecté en tant qu'administrateur.</p>
-                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            <a href="{% url 'orders:admin_dashboard' %}" class="btn btn-primary btn-lg px-4 gap-3">
-                                <i class="bi bi-speedometer2"></i> Tableau de bord administrateur
-                            </a>
-                        </div>
-                    {% elif user.operator_profile %}
-                        <p class="lead mb-4">Vous êtes connecté en tant qu'opérateur.</p>
-                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            <a href="{% url 'accounts:operator_dashboard' %}" class="btn btn-primary btn-lg px-4 gap-3">
-                                <i class="bi bi-speedometer2"></i> Tableau de bord opérateur
-                            </a>
-                        </div>
-                    {% elif user.is_logistics %}
-                        <p class="lead mb-4">Vous êtes connecté en tant que responsable logistique.</p>
-                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            <a href="{% url 'orders:logistics_dashboard' %}" class="btn btn-primary btn-lg px-4 gap-3">
-                                <i class="bi bi-speedometer2"></i> Tableau de bord logistique
-                            </a>
-                        </div>
-                    {% else %}
-                        <p class="lead mb-4">Vous n'avez pas de rôle spécifique.</p>
-                        <div class="alert alert-warning">
-                            Veuillez contacter l'administrateur pour obtenir les permissions nécessaires.
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+<h1 class="text-3xl font-bold text-gray-800 mb-6">Tableau de Bord</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Card Commandes en attente -->
+    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
+        <div>
+            <h2 class="text-sm font-medium text-gray-500">Commandes en attente</h2>
+            <p class="text-3xl font-bold text-gray-800 mt-2">{{ pending_orders }}</p>
+        </div>
+        <div class="bg-orange-100 rounded-full p-3">
+            <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+    </div>
+
+    <!-- Card Commandes du jour -->
+    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
+        <div>
+            <h2 class="text-sm font-medium text-gray-500">Commandes du jour</h2>
+            <p class="text-3xl font-bold text-gray-800 mt-2">{{ orders_today }}</p>
+        </div>
+        <div class="bg-blue-100 rounded-full p-3">
+            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        </div>
+    </div>
+
+    <!-- Card Opérateurs actifs -->
+    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
+        <div>
+            <h2 class="text-sm font-medium text-gray-500">Opérateurs actifs</h2>
+            <p class="text-3xl font-bold text-gray-800 mt-2">{{ active_operators }}</p>
+        </div>
+        <div class="bg-green-100 rounded-full p-3">
+            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+    </div>
+
+    <!-- Card Total des commandes -->
+    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
+        <div>
+            <h2 class="text-sm font-medium text-gray-500">Total des commandes</h2>
+            <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_orders }}</p>
+        </div>
+        <div class="bg-indigo-100 rounded-full p-3">
+            <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+    </div>
+
+    <!-- Card Commandes confirmées -->
+    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
+        <div>
+            <h2 class="text-sm font-medium text-gray-500">Commandes confirmées</h2>
+            <p class="text-3xl font-bold text-gray-800 mt-2">{{ confirmed_orders }}</p>
+            <p class="text-sm text-gray-500 mt-2">
+                Taux de confirmation : {{ confirmation_rate|floatformat:1 }}%
+            </p>
+        </div>
+        <div class="bg-teal-100 rounded-full p-3">
+            <svg class="w-8 h-8 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+    </div>
+
+    <!-- Card Valeur totale -->
+    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
+        <div>
+            <h2 class="text-sm font-medium text-gray-500">Valeur totale</h2>
+            <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_value|floatformat:2 }} DH</p>
+        </div>
+        <div class="bg-pink-100 rounded-full p-3">
+            <svg class="w-8 h-8 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
         </div>
     </div>
 </div>
