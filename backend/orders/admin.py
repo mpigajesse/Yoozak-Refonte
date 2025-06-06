@@ -1,6 +1,13 @@
 from django.contrib import admin
 from .models import Order, ArticleCommande, Region, Ville
 
+class ArticleCommandeInline(admin.TabularInline):
+    model = ArticleCommande
+    extra = 1
+    autocomplete_fields = ['product']
+    fields = ['product', 'quantity', 'price', 'size', 'color_fr', 'color_ar']
+    readonly_fields = ['product_code']
+
 @admin.register(Region)
 class RegionAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_at', 'updated_at')
@@ -26,6 +33,8 @@ class OrderAdmin(admin.ModelAdmin):
         'payment_status',
         'delivery_status',
         'operator',
+        'get_total_articles',
+        'price'
     ]
     
     list_filter = [
@@ -44,7 +53,8 @@ class OrderAdmin(admin.ModelAdmin):
         'client_name',
         'phone',
         'city',
-        'product',
+        'articles__product__name',
+        'articles__product__reference'
     ]
     
     readonly_fields = [
@@ -53,7 +63,10 @@ class OrderAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at',
         'order_date',
+        'price'
     ]
+    
+    inlines = [ArticleCommandeInline]
     
     fieldsets = (
         ('Informations de base', {
@@ -62,14 +75,11 @@ class OrderAdmin(admin.ModelAdmin):
         ('Informations client', {
             'fields': ('client_name', 'phone', 'address', 'city', 'region', 'client_type')
         }),
-        ('Informations produit', {
-            'fields': ('product', 'quantity', 'price')
-        }),
         ('Statuts', {
             'fields': ('payment_status', 'delivery_status', 'returned_piece')
         }),
         ('Paiement', {
-            'fields': ('remaining_payment', 'payment_date')
+            'fields': ('price', 'remaining_payment', 'payment_date')
         }),
         ('Confirmation', {
             'fields': ('confirmation_date', 'motifs', 'confirmation_agent')
@@ -95,3 +105,7 @@ class OrderAdmin(admin.ModelAdmin):
         if obj:  # Si on modifie un objet existant
             return self.readonly_fields + ('order_number', 'yoozak_id')
         return self.readonly_fields
+
+    def get_total_articles(self, obj):
+        return sum(article.quantity for article in obj.articles.all())
+    get_total_articles.short_description = "Total articles"

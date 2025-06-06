@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from accounts.models import Operator
 from django.utils import timezone
+from inventory.models import Product, Stock
 
 class Order(models.Model):
     """Modèle pour les commandes"""
@@ -43,8 +44,8 @@ class Order(models.Model):
     city = models.CharField(max_length=100, verbose_name="Ville")
     region = models.CharField(max_length=100, blank=True, null=True, verbose_name="Région")
     
-    # Informations produit
-    product = models.CharField(max_length=200, verbose_name="Article")
+    # Informations produit (ancien champ maintenu pour compatibilité)
+    product = models.CharField(max_length=200, verbose_name="Article", blank=True, null=True)
     quantity = models.IntegerField(default=1, verbose_name="Quantité")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Prix (DH)")
     
@@ -99,7 +100,14 @@ class Order(models.Model):
                 self.order_number = f"CMD-{str(last_number + 1).zfill(6)}"
             else:
                 self.order_number = "CMD-000001"
-        super().save(*args, **kwargs)
+        
+        # Calculer le prix total à partir des articles
+        if not self.pk:  # Nouvelle commande
+            super().save(*args, **kwargs)
+        else:
+            total_price = sum(article.get_total_price() for article in self.articles.all())
+            self.price = total_price
+            super().save(*args, **kwargs)
     
     def assign_to_operator(self, operator):
         """Assigne la commande à un opérateur"""
@@ -143,8 +151,9 @@ class Order(models.Model):
 
 class ArticleCommande(models.Model):
     """Modèle pour les articles d'une commande"""
-    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='articles', verbose_name="Commande")
-    product_code = models.CharField(max_length=100, verbose_name="Code produit")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='articles', verbose_name="Commande")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='order_items', verbose_name="Produit")
+    product_code = models.CharField(max_length=100, verbose_name="Code produit", blank=True)  # Maintenu pour compatibilité
     size = models.CharField(max_length=20, verbose_name="Pointure")
     color_ar = models.CharField(max_length=50, verbose_name="Couleur (arabe)")
     color_fr = models.CharField(max_length=50, verbose_name="Couleur (français)")
@@ -159,7 +168,24 @@ class ArticleCommande(models.Model):
         ordering = ['created_at']
 
     def __str__(self):
-        return f"{self.product_code} - {self.size} - {self.color_fr}"
+        return f"{self.product.name} ({self.quantity}x)"
+
+    def get_total_price(self):
+        return self.quantity * self.price
+
+    def save(self, *args, **kwargs):
+        # Mettre à jour le code produit et le prix si un produit est sélectionné
+        if self.product:
+            if not self.product_code:
+                self.product_code = self.product.reference
+            # Si le prix n'est pas déjà défini pour cet article de commande, utiliser le prix du produit
+            if self.price is None:
+                self.price = self.product.price
+        
+        super().save(*args, **kwargs)
+        
+        # Mettre à jour le prix total de la commande
+        self.order.save()
 
 class Region(models.Model):
     """Modèle pour les régions"""
