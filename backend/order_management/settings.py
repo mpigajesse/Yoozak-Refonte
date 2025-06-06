@@ -198,9 +198,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuration de l'authentification
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'accounts:login'  # URL de connexion pour l'application
+ADMIN_LOGIN_URL = 'admin:login'  # URL de connexion pour l'admin
+LOGIN_REDIRECT_URL = 'home'  # Redirection après connexion vers la page d'accueil de l'application
+ADMIN_REDIRECT_URL = 'admin:index'  # Redirection après connexion pour l'admin
+LOGOUT_REDIRECT_URL = 'accounts:login'  # Redirection après déconnexion
 
 # Configuration des sessions
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # La session expire à la fermeture du navigateur

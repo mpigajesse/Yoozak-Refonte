@@ -9,8 +9,8 @@ class SessionVerificationMiddleware:
     def __call__(self, request):
         # Liste des URLs qui ne nécessitent pas de vérification
         public_urls = [
-            reverse('login'),
-            '/admin/login/',
+            reverse('accounts:login'),
+            '/admin/',  # Exclure toutes les URLs de l'admin
             '/static/',
             '/media/',
         ]
@@ -19,10 +19,16 @@ class SessionVerificationMiddleware:
         if any(request.path.startswith(url) for url in public_urls):
             return self.get_response(request)
 
-        # Vérifier si l'utilisateur est authentifié et si la session est vérifiée
-        if request.user.is_authenticated and not request.session.get('password_verified', False):
+        # Ne pas vérifier la session si l'utilisateur vient de se déconnecter
+        if not request.user.is_authenticated:
+            return self.get_response(request)
+
+        # Vérifier si la session est vérifiée uniquement pour les utilisateurs authentifiés
+        if not request.session.get('password_verified', False):
             messages.warning(request, "Votre session a expiré. Veuillez vous reconnecter.")
-            return redirect('login')
+            if request.user.is_staff:
+                return redirect('admin:login')
+            return redirect('accounts:login')
 
         response = self.get_response(request)
         return response 

@@ -6,6 +6,9 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.contrib.auth import views as auth_views
+from django.shortcuts import redirect
+from accounts import views as accounts_views
+from . import views as order_management_views
 
 # Configuration Swagger/OpenAPI
 schema_view = get_schema_view(
@@ -22,9 +25,15 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    # Redirection de la racine vers la page de connexion
+    path('', lambda request: redirect('accounts:login'), name='root'),
+    
+    # Page d'accueil principale de l'application
+    path('home/', order_management_views.home, name='home'),
+    
     # URLs d'administration et de connexion
+    path('admin/logout/', accounts_views.logout_view, name='admin_logout'),
     path('admin/', admin.site.urls),
-    path('accounts/login/', auth_views.LoginView.as_view(), name='login'), # URL de connexion
     
     # Documentation API
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),

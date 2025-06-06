@@ -9,5 +9,6 @@ urlpatterns = [
     path('operators/edit/<int:operator_id>/', views.operator_edit, name='operator_edit'),
     path('operators/delete/<int:operator_id>/', views.operator_delete, name='operator_delete'),
     path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     path('operator/dashboard/', views.operator_dashboard, name='operator_dashboard'),
 ]

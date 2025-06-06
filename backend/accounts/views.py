@@ -140,6 +140,24 @@ def operator_dashboard(request):
     }
     return render(request, 'accounts/operator_dashboard.html', context)
 
+def logout_view(request):
+    """Vue pour la déconnexion"""
+    # Vérifier si la déconnexion a été initiée depuis l'interface d'administration
+    is_from_admin = request.path.startswith('/admin/logout')
+
+    # Déconnecter l'utilisateur
+    logout(request)
+
+    messages.success(request, "Vous avez été déconnecté avec succès.")
+
+    # Rediriger en fonction de l'origine de la déconnexion
+    if is_from_admin:
+        # Si la déconnexion vient de l'admin, rediriger vers sa page de connexion
+        return redirect('/admin/login/')
+    else:
+        # Sinon, rediriger vers la page de connexion de l'application
+        return redirect('accounts:login')
+
 def login_view(request):
     """Vue pour la connexion"""
     if request.user.is_authenticated:
@@ -147,7 +165,9 @@ def login_view(request):
         if not request.session.get('password_verified', False):
             logout(request)
             messages.warning(request, "Veuillez vous reconnecter pour continuer.")
-            return redirect('login')
+            return redirect('accounts:login')
+        
+        # Rediriger vers la page d'accueil qui choisit le bon tableau de bord
         return redirect('home')
         
     if request.method == 'POST':
@@ -161,6 +181,7 @@ def login_view(request):
                 # Marquer la session comme vérifiée
                 request.session['password_verified'] = True
                 messages.success(request, f"Bienvenue {user.username} !")
+                # Rediriger vers la page d'accueil qui choisit le bon tableau de bord
                 return redirect('home')
             else:
                 messages.error(request, "Nom d'utilisateur ou mot de passe incorrect.")

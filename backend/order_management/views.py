@@ -12,4 +12,4 @@ def logout_view(request):
     """Vue pour la déconnexion"""
     logout(request)
     messages.success(request, "Vous avez été déconnecté avec succès.")
-    return redirect('login') 
+    return redirect('accounts:login') 
