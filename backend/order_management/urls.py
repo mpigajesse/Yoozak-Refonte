@@ -31,6 +31,12 @@ urlpatterns = [
     # Page d'accueil principale de l'application
     path('home/', order_management_views.home, name='home'),
     
+    # API pour les données du graphique
+    path('api/orders/chart-data/', order_management_views.chart_data, name='chart_data'),
+    
+    # API pour la pagination des activités
+    path('api/activities/', order_management_views.activities_ajax, name='activities_ajax'),
+    
     # URLs d'administration et de connexion
     path('admin/logout/', accounts_views.logout_view, name='admin_logout'),
     path('admin/', admin.site.urls),

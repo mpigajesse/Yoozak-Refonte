@@ -10,97 +10,24 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-100" x-data="{ sidebarOpen: true }">
-    <div class="min-h-screen flex">
+<body class="bg-gray-100 font-sans" x-data="{ sidebarOpen: true }">
+    <div class="flex min-h-screen">
+        
         <!-- Sidebar -->
-        <aside class="w-64 bg-black shadow-xl" x-show="sidebarOpen" @click.outside="sidebarOpen = false">
-            <!-- Logo -->
-            <div class="p-4">
-                <div class="text-4xl font-bold text-white text-center">Y</div>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="mt-8">
-                <!-- Accueil -->
-                <a href="{% url 'home' %}" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800">
-                    <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                    </svg>
-                    <span>Accueil</span>
-                </a>
-
-                <!-- Gestion des commandes -->
-                <div x-data="{ open: false }" class="mt-2">
-                    <button @click="open = !open" class="flex items-center justify-between w-full px-6 py-3 text-gray-300 hover:bg-gray-800 focus:outline-none">
-                        <span class="flex items-center">
-                            <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M2 7h20M5 7a2 2 0 012-2h10a2 2 0 012 2M5 7a2 2 0 002 2h10a2 2 0 002-2"></path></svg>
-                            <span>Gestion commandes</span>
-                        </span>
-                        <svg class="h-4 w-4 transform" :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                    </button>
-                    <div x-show="open" class="pl-10 py-1" style="display: none;">
-                        <a href="{% url 'orders:order_list' %}" class="flex items-center py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">Liste des commandes</a>
-                        <a href="{% url 'orders:create_order' %}" class="flex items-center mt-1 py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">Nouvelle commande</a>
-                    </div>
-                </div>
-
-                <!-- Gestion des opérateurs -->
-                {% if user.is_staff %}
-                <div x-data="{ open: false }" class="mt-2">
-                    <button @click="open = !open" class="flex items-center justify-between w-full px-6 py-3 text-gray-300 hover:bg-gray-800 focus:outline-none">
-                        <span class="flex items-center">
-                            <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                            <span>Gestion opérateurs</span>
-                        </span>
-                        <svg class="h-4 w-4 transform" :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                    </button>
-                    <div x-show="open" class="pl-10 py-1" style="display: none;">
-                        <a href="{% url 'accounts:operator_list' %}" class="flex items-center py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">Liste des opérateurs</a>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Gestion des stocks -->
-                <div x-data="{ open: false }" class="mt-2">
-                    <button @click="open = !open" class="flex items-center justify-between w-full px-6 py-3 text-gray-300 hover:bg-gray-800 focus:outline-none">
-                        <span class="flex items-center">
-                            <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-                            <span>Gestion stocks</span>
-                        </span>
-                        <svg class="h-4 w-4 transform" :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                    </button>
-                    <div x-show="open" class="pl-10 py-1" style="display: none;">
-                        <a href="{% url 'inventory:stock_list' %}" class="flex items-center py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">État des stocks</a>
-                    </div>
-                </div>
-
-                <!-- Configuration -->
-                {% if user.is_staff %}
-                <div x-data="{ open: false }" class="mt-2">
-                    <button @click="open = !open" class="flex items-center justify-between w-full px-6 py-3 text-gray-300 hover:bg-gray-800 focus:outline-none">
-                        <span class="flex items-center">
-                            <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
-                            <span>Configuration</span>
-                        </span>
-                        <svg class="h-4 w-4 transform" :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                    </button>
-                    <div x-show="open" class="pl-10 py-1" style="display: none;">
-                        <a href="{% url 'sync:config_list' %}" class="flex items-center py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">Paramètres</a>
-                    </div>
-                </div>
-                {% endif %}
-            </nav>
-        </aside>
+        {% include 'order_management/_sidebar.html' %}
 
         <!-- Contenu principal -->
         <div class="flex-1 flex flex-col">
-            <header class="bg-white shadow-sm">
+            <!-- Header -->
+            <header class="bg-white shadow-sm sticky top-0 z-20">
                 <div class="w-full mx-auto py-3 px-6 flex justify-between items-center">
+                    <!-- Bouton pour ouvrir/fermer la sidebar (maintenant toujours visible) -->
                     <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-600 focus:outline-none">
                         <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M4 6H20M4 12H20M4 18H11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                    </button>
+            </button>
+                    
                     <div class="flex items-center">
                         <span class="text-gray-700">Bonjour, <strong>{{ user.username }}</strong></span>
                         <a href="{% url 'accounts:logout' %}" class="ml-4 text-gray-500 hover:text-gray-700" title="Déconnexion">
@@ -109,7 +36,9 @@
                     </div>
                 </div>
             </header>
-            <main class="flex-1 bg-gray-100 p-6">
+
+                <!-- Contenu de la page -->
+            <main class="flex-1 bg-gray-50 p-6">
                 {% block content %}{% endblock %}
             </main>
         </div>

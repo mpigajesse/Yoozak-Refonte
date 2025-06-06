@@ -5,95 +5,180 @@
     {% if ville %}Modifier la ville{% else %}Nouvelle ville{% endif %}
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    .fee-display {
-        background-color: #f8f9fa;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        padding: 0.375rem 0.75rem;
-        min-width: 100px;
-        text-align: right;
-    }
-    .fee-edit-mode {
-        display: none;
-    }
-    .fee-display-mode {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        {% if ville %}Modifier la ville{% else %}Nouvelle ville{% endif %}
-                    </h6>
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto">
+        <!-- En-tête -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">
+                    {% if ville %}Modifier la ville{% else %}Nouvelle ville{% endif %}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if ville %}
+                    Modifier les informations de la ville
+                    {% else %}
+                    Créer une nouvelle ville
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{% url 'orders:region_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Retour
+            </a>
+        </div>
+
+        <!-- Formulaire -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" id="villeForm" class="space-y-6 p-6">
+                {% csrf_token %}
+                <input type="hidden" id="fee_modified" name="fee_modified" value="0">
+
+                {% if form.non_field_errors %}
+                <div class="rounded-md bg-red-50 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Des erreurs sont survenues</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="post" id="villeForm">
-                        {% csrf_token %}
-                        <input type="hidden" id="fee_modified" name="fee_modified" value="0">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nom de la ville</label>
-                            <input type="text" class="form-control" id="name" name="name" 
-                                   value="{{ ville.name|default:'' }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="region" class="form-label">Région</label>
-                            <select class="form-select" id="region" name="region" required>
-                                <option value="">Sélectionnez une région</option>
-                                {% for region in regions %}
-                                <option value="{{ region.id }}" 
-                                        {% if ville.region.id == region.id %}selected{% endif %}>
-                                    {{ region.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="delivery_delay" class="form-label">Délai de livraison</label>
-                            <input type="text" class="form-control" id="delivery_delay" name="delivery_delay"
-                                   value="{{ ville.delivery_delay|default:'' }}" 
-                                   placeholder="Ex: 24-48h">
-                        </div>
-                        <div class="mb-3">
-                            <label for="delivery_fee" class="form-label">Frais de livraison (DH)</label>
-                            <div class="fee-display-mode">
-                                <span class="fee-display" id="feeDisplay">
-                                    {{ ville.delivery_fee|default:"0.00" }} DH
-                                </span>
-                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleFeeEdit()">
-                                    <i class="bi bi-pencil"></i> Modifier
-                                </button>
+                {% endif %}
+
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Nom de la ville</label>
+                    <div class="mt-1">
+                        <input type="text" 
+                               name="name" 
+                               id="name" 
+                               value="{{ ville.name|default:'' }}"
+                               class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.name.errors %}border-red-300{% endif %}"
+                               required>
+                        {% if form.name.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="region" class="block text-sm font-medium text-gray-700">Région</label>
+                    <div class="mt-1">
+                        <select name="region" 
+                                id="region" 
+                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.region.errors %}border-red-300{% endif %}"
+                                required>
+                            <option value="">Sélectionnez une région</option>
+                            {% for region in regions %}
+                            <option value="{{ region.id }}" 
+                                    {% if ville.region.id == region.id %}selected{% endif %}>
+                                {{ region.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.region.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.region.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="delivery_delay" class="block text-sm font-medium text-gray-700">Délai de livraison</label>
+                    <div class="mt-1">
+                        <input type="text" 
+                               name="delivery_delay" 
+                               id="delivery_delay" 
+                               value="{{ ville.delivery_delay|default:'' }}"
+                               placeholder="Ex: 24-48h"
+                               class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.delivery_delay.errors %}border-red-300{% endif %}">
+                        {% if form.delivery_delay.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.delivery_delay.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="delivery_fee" class="block text-sm font-medium text-gray-700">Frais de livraison (DH)</label>
+                    <div class="mt-1">
+                        <div class="fee-display-mode flex items-center space-x-3">
+                            <div class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-right text-sm text-gray-700">
+                                <span id="feeDisplay">{{ ville.delivery_fee|default:"0.00" }} DH</span>
                             </div>
-                            <div class="fee-edit-mode">
-                                <input type="number" class="form-control" id="delivery_fee" name="delivery_fee"
-                                       value="{{ ville.delivery_fee|default:'0' }}" step="0.01" min="0">
-                                <div class="form-text">Laissez 0 pour la livraison gratuite</div>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'orders:region_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Retour
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Enregistrer
+                            <button type="button" 
+                                    onclick="toggleFeeEdit()"
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Modifier
                             </button>
                         </div>
-                    </form>
+                        <div class="fee-edit-mode hidden">
+                            <input type="number" 
+                                   name="delivery_fee" 
+                                   id="delivery_fee" 
+                                   value="{{ ville.delivery_fee|default:'0' }}"
+                                   step="0.01" 
+                                   min="0"
+                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.delivery_fee.errors %}border-red-300{% endif %}">
+                            <p class="mt-2 text-sm text-gray-500">Laissez 0 pour la livraison gratuite</p>
+                            {% if form.delivery_fee.errors %}
+                            <p class="mt-2 text-sm text-red-600">
+                                {% for error in form.delivery_fee.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                <div class="flex justify-end space-x-3">
+                    {% if ville %}
+                    <a href="{% url 'orders:ville_delete' ville.id %}" 
+                       class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Supprimer
+                    </a>
+                    {% endif %}
+                    <button type="submit" 
+                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {% if ville %}Enregistrer les modifications{% else %}Créer la ville{% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -107,14 +192,14 @@ function toggleFeeEdit() {
     
     if (!isEditing) {
         // Passer en mode édition
-        displayMode.style.display = 'none';
-        editMode.style.display = 'block';
+        displayMode.classList.add('hidden');
+        editMode.classList.remove('hidden');
         feeInput.value = originalFee;
         isEditing = true;
     } else {
         // Revenir en mode affichage
-        displayMode.style.display = 'flex';
-        editMode.style.display = 'none';
+        displayMode.classList.remove('hidden');
+        editMode.classList.add('hidden');
         originalFee = feeInput.value;
         document.getElementById('feeDisplay').textContent = originalFee + ' DH';
         isEditing = false;
@@ -129,12 +214,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Si c'est une nouvelle ville, afficher directement le mode édition
     if (!document.querySelector('#feeDisplay').textContent.includes('0.00')) {
-        displayMode.style.display = 'flex';
-        editMode.style.display = 'none';
+        displayMode.classList.remove('hidden');
+        editMode.classList.add('hidden');
         isEditing = false;
     } else {
-        displayMode.style.display = 'none';
-        editMode.style.display = 'block';
+        displayMode.classList.add('hidden');
+        editMode.classList.remove('hidden');
         isEditing = true;
     }
 
@@ -155,4 +240,5 @@ document.getElementById('villeForm').addEventListener('submit', function(e) {
     }
 });
 </script>
+{% endblock %}
 {% endblock %} 

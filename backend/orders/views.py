@@ -12,6 +12,8 @@ from django.views.decorators.http import require_POST
 import json
 from django import forms
 from .models import Region, Ville
+from django.db import models
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 def is_admin(user):
     """Vérifie si l'utilisateur est un administrateur"""
@@ -29,6 +31,45 @@ CANCELLATION_REASONS = [
     ('produit_indisponible', 'Produit indisponible'),
     ('commande_doublon', 'Commande en doublon'),
     ('autre', 'Autre raison'),
+]
+
+# Constantes pour les couleurs des badges de statut
+STATUS_COLORS = {
+    'delivery': {
+        'en_preparation': ('bg-blue-100', 'text-blue-800'),
+        'en_livraison': ('bg-yellow-100', 'text-yellow-800'),
+        'livree': ('bg-green-100', 'text-green-800'),
+        'retournee': ('bg-red-100', 'text-red-800'),
+    },
+    'payment': {
+        'non_paye': ('bg-red-100', 'text-red-800'),
+        'partiellement_paye': ('bg-yellow-100', 'text-yellow-800'),
+        'paye': ('bg-green-100', 'text-green-800'),
+    }
+}
+
+# Formulaire pour la confirmation de commande
+class ConfirmationForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ['status', 'motifs']
+        widgets = {
+            'status': forms.Select(choices=[
+                ('a_confirmer', 'À confirmer'),
+                ('en_cours_confirmation', 'En cours de confirmation'),
+                ('confirmee', 'Confirmée'),
+            ]),
+            'motifs': forms.Textarea(attrs={'rows': 3}),
+        }
+
+# Formulaire pour la modification de commande
+class OrderEditForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = [
+            'client_name', 'phone', 'city', 'address', 
+            'product', 'quantity', 'payment_status', 
+            'delivery_status', 'modifications'
 ]
 
 @login_required
@@ -172,24 +213,48 @@ def order_list(request):
     # Filtres
     status = request.GET.get('status', '')
     operator_id = request.GET.get('operator', '')
+    search_query = request.GET.get('search', '')
     
     # Récupérer toutes les commandes, y compris les annulées
     orders = Order.objects.all().order_by('-creation_date')
     
+    # Appliquer les filtres
     if status:
         orders = orders.filter(status=status)
     
     if operator_id:
         orders = orders.filter(operator_id=operator_id)
     
+    # Appliquer la recherche
+    if search_query:
+        orders = orders.filter(
+            models.Q(order_number__icontains=search_query) |
+            models.Q(client_name__icontains=search_query) |
+            models.Q(phone__icontains=search_query) |
+            models.Q(city__icontains=search_query) |
+            models.Q(product__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(orders, 10)  # 10 commandes par page
+    page = request.GET.get('page', 1)
+    
+    try:
+        orders_page = paginator.page(page)
+    except PageNotAnInteger:
+        orders_page = paginator.page(1)
+    except EmptyPage:
+        orders_page = paginator.page(paginator.num_pages)
+    
     operators = Operator.objects.all()
     
     context = {
-        'orders': orders,
+        'orders': orders_page,
         'operators': operators,
         'status_choices': Order.STATUS_CHOICES,
         'selected_status': status,
         'selected_operator': operator_id,
+        'search_query': search_query,
     }
     return render(request, 'orders/order_list.html', context)
 
@@ -368,120 +433,50 @@ def bulk_assign(request):
 
 @login_required
 def operator_orders(request):
-    """Liste des commandes pour un opérateur"""
+    """Vue pour afficher les commandes assignées à un opérateur"""
     try:
-        operator = request.user.operator_profile
-    except:
-        messages.error(request, "Vous devez être connecté en tant qu'opérateur pour accéder à cette page.")
-        return redirect('login')
-    
-    # Récupérer les commandes affectées à cet opérateur
-    orders = Order.objects.filter(
-        operator=operator
-    ).exclude(
-        status__in=['confirmee', 'annulee']
-    ).order_by('creation_date')
+        operator = request.user.operator
+        orders = Order.objects.filter(operator=operator).order_by('-creation_date')
+    except Operator.DoesNotExist:
+        orders = Order.objects.none()
+        messages.warning(request, "Votre compte utilisateur n'est pas associé à un profil opérateur.")
     
     context = {
         'orders': orders,
+        'confirmation_form_template': ConfirmationForm(),
+        'edit_form_template': OrderEditForm(),
+        'status_colors': STATUS_COLORS,
+        'active_menu': 'orders',
+        'active_page': 'operator_orders'
     }
     return render(request, 'orders/operator_orders.html', context)
 
-@login_required
+@require_POST
 def order_confirm(request, yoozak_id):
-    """Confirmer une commande (pour opérateur)"""
+    """Traite la confirmation d'une commande via la modale"""
     order = get_object_or_404(Order, yoozak_id=yoozak_id)
-    
-    # Vérifier que l'opérateur est bien affecté à cette commande
-    try:
-        operator = request.user.operator_profile
-        if order.operator != operator:
-            messages.error(request, "Vous n'êtes pas autorisé à confirmer cette commande.")
-            return redirect('orders:operator_orders')
-    except:
-        return redirect('admin:index')
-    
-    if request.method == 'POST':
-        status = request.POST.get('status')
-        
-        if status in ['a_confirmer', 'en_cours_confirmation', 'confirmee']:
-            order.status = status
-            
-            if status == 'confirmee':
-                order.confirmation_date = timezone.now()
-            
-            order.save()
-            messages.success(request, f"Statut de la commande {order.order_number} mis à jour.")
-            
-            if status == 'confirmee':
-                return redirect('orders:operator_orders')
-        else:
-            messages.error(request, "Statut invalide.")
-    
-    context = {
-        'order': order,
-    }
-    return render(request, 'orders/order_confirm.html', context)
+    form = ConfirmationForm(request.POST, instance=order, prefix=f"confirm-{order.yoozak_id}")
+    if form.is_valid():
+        form.save()
+        messages.success(request, f"La commande #{order.order_number} a été mise à jour.")
+    else:
+        messages.error(request, "Erreur lors de la confirmation. Veuillez vérifier les données.")
+        return redirect('orders:operator_orders')
 
 @login_required
+@require_POST
 def order_edit(request, yoozak_id):
-    """Modifier les informations d'une commande (pour opérateur)"""
+    """Traite la modification d'une commande via la modale"""
     order = get_object_or_404(Order, yoozak_id=yoozak_id)
-    
-    # Vérifier que l'opérateur est bien affecté à cette commande
-    try:
-        operator = request.user.operator_profile
-        if order.operator != operator:
-            messages.error(request, "Vous n'êtes pas autorisé à modifier cette commande.")
-            return redirect('orders:operator_orders')
-    except:
-        messages.error(request, "Vous devez être connecté en tant qu'opérateur pour accéder à cette page.")
-        return redirect('login')
-    
-    if request.method == 'POST':
-        # Récupérer les données du formulaire
-        client_name = request.POST.get('client_name')
-        phone = request.POST.get('phone')
-        address = request.POST.get('address')
-        city = request.POST.get('city')
-        product = request.POST.get('product')
-        quantity = request.POST.get('quantity')
-        
-        # Validation des champs obligatoires
-        if not all([client_name, phone, product, quantity]):
-            messages.error(request, "Veuillez remplir tous les champs obligatoires.")
-            return render(request, 'orders/order_edit.html', {'order': order})
-        
-        try:
-            quantity = int(quantity)
-            if quantity < 1:
-                raise ValueError("La quantité doit être supérieure à 0")
-        except ValueError:
-            messages.error(request, "La quantité doit être un nombre entier positif.")
-            return render(request, 'orders/order_edit.html', {'order': order})
-        
-        # Enregistrer les modifications
-        order.client_name = client_name
-        order.phone = phone
-        order.address = address
-        order.city = city
-        order.product = product
-        order.quantity = quantity
-        
-        # Enregistrer l'historique des modifications
-        modifications = f"Modifié le {timezone.now().strftime('%d/%m/%Y à %H:%M')} par {operator.user.username}\n"
-        if order.modifications:
-            modifications = order.modifications + "\n" + modifications
-        order.modifications = modifications
-        
-        order.save()
-        messages.success(request, f"Les informations de la commande {order.order_number} ont été mises à jour avec succès.")
+    form = OrderEditForm(request.POST, instance=order, prefix=f"edit-{order.yoozak_id}")
+    if form.is_valid():
+        form.save()
+        messages.success(request, f"La commande #{order.order_number} a été modifiée.")
+    else:
+        # Renvoyer les erreurs du formulaire pour l'affichage
+        error_message = "Erreur de modification : " + form.errors.as_text()
+        messages.error(request, error_message)
         return redirect('orders:operator_orders')
-    
-    context = {
-        'order': order,
-    }
-    return render(request, 'orders/order_edit.html', context)
 
 @login_required
 def check_stock(request):
@@ -535,20 +530,24 @@ def mark_as_printed(request, yoozak_id):
 @user_passes_test(is_admin)
 def create_order(request):
     """Créer une nouvelle commande"""
+    # Récupérer la liste des villes pour le formulaire
+    villes = Ville.objects.all().order_by('name')
+    
     if request.method == 'POST':
         # Récupérer les données du formulaire
         client_name = request.POST.get('client_name')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
-        city = request.POST.get('city')
+        city_id = request.POST.get('city')
         product = request.POST.get('product')
         quantity = request.POST.get('quantity')
         price = request.POST.get('price')
+        notes = request.POST.get('notes')
         
         # Validation des champs obligatoires
         if not all([client_name, phone, product, quantity, price]):
             messages.error(request, "Veuillez remplir tous les champs obligatoires.")
-            return render(request, 'orders/order_form.html')
+            return render(request, 'orders/order_form.html', {'villes': villes})
         
         try:
             quantity = int(quantity)
@@ -557,9 +556,21 @@ def create_order(request):
                 raise ValueError("La quantité doit être supérieure à 0")
             if price < 0:
                 raise ValueError("Le prix doit être positif")
+                
+            # Récupérer la ville si un ID est fourni
+            city = None
+            if city_id:
+                try:
+                    city = Ville.objects.get(id=city_id)
+                except Ville.DoesNotExist:
+                    messages.warning(request, "La ville sélectionnée n'existe pas.")
+            
         except ValueError as e:
             messages.error(request, str(e))
-            return render(request, 'orders/order_form.html')
+            return render(request, 'orders/order_form.html', {'villes': villes})
+        
+        # Nettoyer le numéro de téléphone
+        phone = ''.join(filter(str.isdigit, phone))
         
         # Générer un numéro de commande unique
         order_number = f"CMD{timezone.now().strftime('%Y%m%d%H%M%S')}"
@@ -570,18 +581,19 @@ def create_order(request):
             client_name=client_name,
             phone=phone,
             address=address,
-            city=city,
+            city=city.name if city else None,
             product=product,
             quantity=quantity,
             price=price,
             creation_date=timezone.now(),
-            status='non_affectee'
+            status='non_affectee',
+            notes=notes
         )
         
         messages.success(request, f"Commande {order_number} créée avec succès.")
         return redirect('orders:order_detail', yoozak_id=order.yoozak_id)
     
-    return render(request, 'orders/order_form.html')
+    return render(request, 'orders/order_form.html', {'villes': villes})
 
 @login_required
 @user_passes_test(is_admin)
@@ -828,3 +840,56 @@ def ville_delete(request, ville_id):
         'ville': ville,
         'title': f'Supprimer {ville.name}'
     })
+
+@login_required
+@user_passes_test(is_admin)
+def region_edit(request, region_id):
+    """Modifier une région"""
+    region = get_object_or_404(Region, id=region_id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            region.name = name
+            region.save()
+            messages.success(request, f"La région {name} a été modifiée avec succès.")
+            return redirect('orders:region_list')
+        else:
+            messages.error(request, "Le nom de la région est requis.")
+    
+    return render(request, 'orders/region_form.html', {
+        'region': region,
+        'title': f'Modifier {region.name}'
+    })
+
+@login_required
+@user_passes_test(is_admin)
+def region_delete(request, region_id):
+    """Supprimer une région"""
+    region = get_object_or_404(Region, id=region_id)
+    
+    if request.method == 'POST':
+        name = region.name
+        region.delete()
+        messages.success(request, f"La région {name} a été supprimée avec succès.")
+        return redirect('orders:region_list')
+    
+    return render(request, 'orders/region_confirm_delete.html', {
+        'region': region,
+        'title': f'Supprimer {region.name}'
+    })
+
+@login_required
+@user_passes_test(is_admin)
+def restore_order(request, yoozak_id):
+    """Restaure une commande annulée."""
+    order = get_object_or_404(Order, yoozak_id=yoozak_id)
+    if order.status == 'annulee':
+        order.status = 'non_affectee'  # Ou un autre statut approprié
+        order.cancellation_reason = None # Effacer le motif d'annulation
+        order.save()
+        messages.success(request, f"La commande #{order.order_number} a été restaurée avec succès.")
+    else:
+        messages.warning(request, f"La commande #{order.order_number} n'est pas annulée et ne peut donc pas être restaurée.")
+    
+    return redirect('orders:cancelled_orders')

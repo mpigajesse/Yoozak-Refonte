@@ -1,55 +1,70 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 
-{% block title %}{{ action }} une configuration{% endblock %}
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouvelle{% endif %} Configuration{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title mb-0">{{ action }} une configuration</h2>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{% if form.instance.pk %}Modifier la Configuration{% else %}Nouvelle Configuration de Synchronisation{% endif %}</h1>
+        <a href="{% url 'sync:config_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Retour à la liste
+        </a>
+    </div>
+
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" class="p-8 space-y-6">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline">{{ form.non_field_errors }}</span>
                 </div>
-                <div class="card-body">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        
-                        {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {% for error in form.non_field_errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        
-                        {% for field in form %}
-                        <div class="mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in field.errors %}
-                                {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if field.help_text %}
-                            <div class="form-text">{{ field.help_text }}</div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                        
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'sync:config_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Retour
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Enregistrer
-                            </button>
-                        </div>
-                    </form>
+                {% endif %}
+
+                <div>
+                    <label for="{{ form.sheet_url.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.sheet_url.label }}</label>
+                    <div class="mt-1">
+                        {% render_field form.sheet_url class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="https://docs.google.com/spreadsheets/d/..." %}
+                    </div>
+                    {% for error in form.sheet_url.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
+                    {% if form.sheet_url.help_text %}<p class="mt-2 text-sm text-gray-500">{{ form.sheet_url.help_text|safe }}</p>{% endif %}
                 </div>
-            </div>
+
+                <div>
+                    <label for="{{ form.sheet_name.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.sheet_name.label }}</label>
+                    <div class="mt-1">
+                        {% render_field form.sheet_name class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Feuille1" %}
+                    </div>
+                    {% for error in form.sheet_name.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
+                    {% if form.sheet_name.help_text %}<p class="mt-2 text-sm text-gray-500">{{ form.sheet_name.help_text|safe }}</p>{% endif %}
+                </div>
+                
+                <div class="relative flex items-start">
+                    <div class="flex items-center h-5">
+                         {% render_field form.is_active class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" %}
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="{{ form.is_active.id_for_label }}" class="font-medium text-gray-700">{{ form.is_active.label }}</label>
+                        {% if form.is_active.help_text %}<p class="text-gray-500">{{ form.is_active.help_text|safe }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-5 border-t border-gray-200">
+                    <div class="flex justify-end">
+                        <a href="{% url 'sync:config_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Annuler
+                        </a>
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
+                            Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>

@@ -4,6 +4,10 @@ from django.contrib import messages
 from .models import Stock
 from django import forms
 
+def is_admin(user):
+    """Vérifie si l'utilisateur est un administrateur"""
+    return user.is_authenticated and user.is_staff
+
 class StockForm(forms.ModelForm):
     class Meta:
         model = Stock
@@ -17,9 +21,11 @@ class StockForm(forms.ModelForm):
             'photo': forms.FileInput(attrs={'class': 'form-control'})
         }
 
-def is_admin(user):
-    """Vérifie si l'utilisateur est un administrateur"""
-    return user.is_authenticated and user.is_staff
+    def clean_photo(self):
+        photo = self.cleaned_data.get('photo')
+        if not photo and not self.instance.pk:  # Si pas de photo et nouvelle instance
+            return None  # Retourne None au lieu de lever une erreur
+        return photo
 
 @login_required
 @user_passes_test(is_admin)
@@ -39,7 +45,10 @@ def stock_create(request):
     if request.method == 'POST':
         form = StockForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            stock = form.save(commit=False)
+            if not stock.photo:  # Si pas de photo
+                stock.photo = None  # Explicitement mettre à None
+            stock.save()
             messages.success(request, "Article ajouté au stock avec succès.")
             return redirect('inventory:stock_list')
         else:
@@ -58,7 +67,10 @@ def stock_edit(request, stock_id):
     if request.method == 'POST':
         form = StockForm(request.POST, request.FILES, instance=stock)
         if form.is_valid():
-            form.save()
+            stock = form.save(commit=False)
+            if not stock.photo:  # Si pas de photo
+                stock.photo = None  # Explicitement mettre à None
+            stock.save()
             messages.success(request, "Article mis à jour avec succès.")
             return redirect('inventory:stock_list')
         else:

@@ -4,39 +4,285 @@ from django.contrib.auth import logout
 from django.contrib import messages
 from django.db.models import Count, Sum
 from django.utils import timezone
+from django.http import JsonResponse
+from datetime import timedelta
+import json
 from orders.models import Order
 from accounts.models import Operator
+from inventory.models import Stock
+from django.urls import reverse
+from django.core.paginator import Paginator
+
+def get_activity_period(timestamp):
+    """Détermine la période d'une activité"""
+    now = timezone.now()
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+    start_of_week = today - timedelta(days=today.weekday())
+    
+    activity_date = timestamp.date()
+    
+    if activity_date == today:
+        return 'today'
+    elif activity_date == yesterday:
+        return 'yesterday'
+    elif activity_date >= start_of_week:
+        return 'this_week'
+    else:
+        return 'older'
+
+def get_recent_activities():
+    """Récupère et formate les activités récentes"""
+    recent_activities = []
+    two_weeks_ago = timezone.now() - timedelta(days=14)
+    
+    # Dernières commandes
+    recent_orders = Order.objects.filter(
+        creation_date__gte=two_weeks_ago
+    ).order_by('-creation_date')[:50]
+    
+    for order in recent_orders:
+        status_text = {
+            'non_affectee': 'en attente',
+            'en_cours': 'en traitement',
+            'confirmee': 'confirmée',
+            'annulee': 'annulée'
+        }.get(order.status, order.status)
+        
+        recent_activities.append({
+            'type': 'order',
+            'description': f"Commande {status_text}",
+            'reference': order.order_number,
+            'url': reverse('orders:order_detail', kwargs={'yoozak_id': order.yoozak_id}),
+            'timestamp': order.creation_date,
+            'status': order.status,
+            'client': order.client_name,
+            'price': order.price,
+            'period': get_activity_period(order.creation_date)
+        })
+    
+    # Dernières modifications de stock
+    recent_stock_updates = Stock.objects.filter(
+        last_updated__gte=two_weeks_ago
+    ).order_by('-last_updated')[:50]
+    
+    for stock in recent_stock_updates:
+        recent_activities.append({
+            'type': 'inventory',
+            'description': f"Stock mis à jour",
+            'reference': f"{stock.article_name}",
+            'url': reverse('inventory:stock_edit', kwargs={'stock_id': stock.id}),
+            'timestamp': stock.last_updated,
+            'quantity': stock.quantity_available,
+            'article_code': stock.article_code,
+            'color': stock.color,
+            'size': stock.size,
+            'period': get_activity_period(stock.last_updated)
+        })
+    
+    # Trier les activités par date
+    recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+    return recent_activities
+
+@login_required
+def activities_ajax(request):
+    """Vue AJAX pour la pagination des activités"""
+    page = request.GET.get('page', 1)
+    
+    # Récupérer toutes les activités
+    all_activities = get_recent_activities()
+    
+    # Grouper les activités par période
+    grouped_activities = {
+        'today': [],
+        'yesterday': [],
+        'this_week': [],
+        'older': []
+    }
+    
+    for activity in all_activities:
+        grouped_activities[activity['period']].append(activity)
+    
+    # Créer une liste plate des activités pour la pagination
+    flat_activities = []
+    for period in ['today', 'yesterday', 'this_week', 'older']:
+        for activity in grouped_activities[period]:
+            flat_activities.append(activity)
+    
+    # Pagination
+    paginator = Paginator(flat_activities, 5)  # 5 activités par page
+    activities_page = paginator.get_page(page)
+    
+    # Regrouper les activités de la page actuelle
+    page_grouped_activities = {
+        'today': [],
+        'yesterday': [],
+        'this_week': [],
+        'older': []
+    }
+    
+    for activity in activities_page:
+        page_grouped_activities[activity['period']].append(activity)
+    
+    # Render le template partiel
+    html = render(request, 'order_management/includes/activities_content.html', {
+        'grouped_activities': page_grouped_activities
+    }).content.decode('utf-8')
+    
+    return JsonResponse({
+        'html': html,
+        'has_previous': activities_page.has_previous(),
+        'has_next': activities_page.has_next(),
+        'previous_page_number': activities_page.previous_page_number() if activities_page.has_previous() else None,
+        'next_page_number': activities_page.next_page_number() if activities_page.has_next() else None,
+        'current_page': activities_page.number,
+        'total_pages': paginator.num_pages,
+        'total_activities': paginator.count
+    })
 
 @login_required
 def home(request):
     """Vue de la page d'accueil"""
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+    
     # Statistiques des commandes
     pending_orders = Order.objects.filter(status='non_affectee').count()
-    today = timezone.now().date()
+    pending_orders_yesterday = Order.objects.filter(
+        status='non_affectee',
+        creation_date__date=yesterday
+    ).count()
+    
+    # Calcul du changement en pourcentage des commandes en attente
+    if pending_orders_yesterday > 0:
+        pending_orders_change = ((pending_orders - pending_orders_yesterday) / pending_orders_yesterday) * 100
+    else:
+        pending_orders_change = 0
+    
+    # Commandes du jour
     orders_today = Order.objects.filter(creation_date__date=today).count()
-    active_operators = Operator.objects.filter(is_active=True).count()
+    orders_target = 50  # Objectif quotidien (à ajuster selon vos besoins)
+    orders_progress = min((orders_today / orders_target) * 100, 100)
+    
+    # Opérateurs
+    active_operators = Operator.objects.filter(is_active=True)
+    total_operators = Operator.objects.count()
     
     # Statistiques supplémentaires
     total_orders = Order.objects.count()
     confirmed_orders = Order.objects.filter(status='confirmee').count()
     total_value = Order.objects.aggregate(total=Sum('price'))['total'] or 0
-
+    
     # Calcul du taux de confirmation
     confirmation_rate = 0
+    confirmation_rate_change = 0
     if total_orders > 0:
         confirmation_rate = (confirmed_orders / total_orders) * 100
+        # Calcul du changement du taux de confirmation
+        yesterday_orders = Order.objects.filter(creation_date__date=yesterday)
+        yesterday_total = yesterday_orders.count()
+        yesterday_confirmed = yesterday_orders.filter(status='confirmee').count()
+        if yesterday_total > 0:
+            yesterday_rate = (yesterday_confirmed / yesterday_total) * 100
+            confirmation_rate_change = confirmation_rate - yesterday_rate
+    
+    # Données pour le graphique
+    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    chart_data = []
+    chart_labels = []
+    
+    for date in last_7_days:
+        count = Order.objects.filter(creation_date__date=date).count()
+        chart_data.append(count)
+        chart_labels.append(date.strftime("%d/%m"))
+    
+    # Conversion en JSON pour le template
+    chart_data_json = json.dumps(chart_data)
+    chart_labels_json = json.dumps(chart_labels)
+    
+    # Récupérer les activités récentes (première page)
+    all_activities = get_recent_activities()
+    
+    # Grouper les activités par période pour la première page
+    grouped_activities = {
+        'today': [],
+        'yesterday': [],
+        'this_week': [],
+        'older': []
+    }
+    
+    for activity in all_activities:
+        grouped_activities[activity['period']].append(activity)
+    
+    # Limiter à 5 activités pour la première page
+    flat_activities = []
+    for period in ['today', 'yesterday', 'this_week', 'older']:
+        for activity in grouped_activities[period]:
+            flat_activities.append(activity)
+    
+    paginator = Paginator(flat_activities, 5)
+    first_page_activities = paginator.get_page(1)
+    
+    # Regrouper les activités de la première page
+    first_page_grouped = {
+        'today': [],
+        'yesterday': [],
+        'this_week': [],
+        'older': []
+    }
+    
+    for activity in first_page_activities:
+        first_page_grouped[activity['period']].append(activity)
     
     context = {
         'pending_orders': pending_orders,
+        'pending_orders_change': pending_orders_change,
         'orders_today': orders_today,
-        'active_operators': active_operators,
+        'orders_target': orders_target,
+        'orders_progress': orders_progress,
+        'active_operators': active_operators.count(),
+        'total_operators': total_operators,
+        'active_operator_list': active_operators,
         'total_orders': total_orders,
         'confirmed_orders': confirmed_orders,
         'total_value': total_value,
         'confirmation_rate': confirmation_rate,
+        'confirmation_rate_change': confirmation_rate_change,
+        'chart_data': chart_data_json,
+        'chart_labels': chart_labels_json,
+        'grouped_activities': first_page_grouped,
+        'activities_paginator': paginator,
+        'current_date': timezone.now()
     }
     
     return render(request, 'order_management/home.html', context)
+
+@login_required
+def chart_data(request):
+    """API pour les données du graphique"""
+    period = request.GET.get('period', 'week')
+    today = timezone.now().date()
+    
+    if period == 'week':
+        days = 7
+        date_format = "%d/%m"
+    else:  # month
+        days = 30
+        date_format = "%d/%m"
+    
+    dates = [today - timedelta(days=i) for i in range(days-1, -1, -1)]
+    data = []
+    labels = []
+    
+    for date in dates:
+        count = Order.objects.filter(creation_date__date=date).count()
+        data.append(count)
+        labels.append(date.strftime(date_format))
+    
+    return JsonResponse({
+        'labels': labels,
+        'values': data
+    })
 
 def logout_view(request):
     """Vue pour la déconnexion"""

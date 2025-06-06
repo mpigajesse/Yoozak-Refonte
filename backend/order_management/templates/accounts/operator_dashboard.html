@@ -3,89 +3,167 @@
 {% block title %}Tableau de bord opérateur{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <h1 class="mb-4">Tableau de bord opérateur</h1>
-    
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Mes commandes à traiter</h5>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Tableau de bord opérateur</h1>
+            <p class="mt-1 text-sm text-gray-500">Gérez vos commandes à traiter</p>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Commandes en attente -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
+                <div class="ml-5">
+                    <p class="text-sm font-medium text-gray-500">Commandes en attente</p>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ pending_orders_count }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commandes traitées aujourd'hui -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-5">
+                    <p class="text-sm font-medium text-gray-500">Traitées aujourd'hui</p>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ today_processed_count }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Taux de confirmation -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
+                    <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div class="ml-5">
+                    <p class="text-sm font-medium text-gray-500">Taux de confirmation</p>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ confirmation_rate }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des commandes -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Mes commandes à traiter</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
                                 <tr>
-                                    <th>N° Commande</th>
-                                    <th>Client</th>
-                                    <th>Téléphone</th>
-                                    <th>Produit</th>
-                                    <th>Prix</th>
-                                    <th>Statut</th>
-                                    <th>Date création</th>
-                                    <th>Actions</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° Commande</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Téléphone</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prix</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date création</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                <tbody class="bg-white divide-y divide-gray-200">
                                 {% for order in orders %}
-                                <tr>
-                                    <td>{{ order.order_number }}</td>
-                                    <td>{{ order.client_name }}</td>
-                                    <td>{{ order.phone }}</td>
-                                    <td>{{ order.product }}</td>
-                                    <td>{{ order.price }} DH</td>
-                                    <td>
-                                        {% if order.status == 'affectee' %}
-                                            <span class="badge bg-info">Affectée</span>
-                                        {% elif order.status == 'a_confirmer' %}
-                                            <span class="badge bg-primary">À confirmer</span>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ order.order_number }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ order.client_name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ order.phone }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ order.product }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                            {{ order.price }} DH
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if order.status == 'non_affectee' %}
+                                    bg-gray-100 text-gray-800
+                                {% elif order.status == 'affectee' %}
+                                    bg-yellow-100 text-yellow-800
                                         {% elif order.status == 'en_cours_confirmation' %}
-                                            <span class="badge bg-warning">En cours</span>
-                                        {% endif %}
+                                    bg-blue-100 text-blue-800
+                                {% elif order.status == 'confirmee' %}
+                                    bg-green-100 text-green-800
+                                {% elif order.status == 'erronnee' %}
+                                    bg-red-100 text-red-800
+                                {% elif order.status == 'doublon' %}
+                                    bg-purple-100 text-purple-800
+                                {% else %}
+                                    bg-gray-100 text-gray-800
+                                {% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ order.created_at|date:"d/m/Y H:i" }}
                                     </td>
-                                    <td>{{ order.creation_date|date:"d/m/Y H:i" }}</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'orders:order_confirm' order.yoozak_id %}" class="btn btn-sm btn-success">
-                                                <i class="bi bi-check-circle"></i> Confirmer
-                                            </a>
-                                            <a href="{% url 'orders:order_edit' order.yoozak_id %}" class="btn btn-sm btn-primary">
-                                                <i class="bi bi-pencil"></i> Modifier
-                                            </a>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end space-x-3">
+                                <a href="{% url 'orders:order_detail' order.pk %}" 
+                                   class="text-indigo-600 hover:text-indigo-900">
+                                    <span class="sr-only">Voir</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </a>
+                                <a href="{% url 'orders:order_edit' order.pk %}" 
+                                   class="text-blue-600 hover:text-blue-900">
+                                    <span class="sr-only">Modifier</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </a>
+                                {% if order.status == 'en_cours_confirmation' %}
+                                <a href="{% url 'orders:order_confirm' order.pk %}" 
+                                   class="text-green-600 hover:text-green-900">
+                                    <span class="sr-only">Confirmer</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </a>
+                                {% endif %}
                                         </div>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="8" class="text-center">Aucune commande à traiter</td>
+                        <td colspan="8" class="px-6 py-10 text-center text-sm text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                </svg>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune commande à traiter</h3>
+                                <p class="mt-1 text-sm text-gray-500">Toutes vos commandes ont été traitées.</p>
+                            </div>
+                        </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Actions rapides</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'orders:operator_orders' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-list-check"></i> Voir toutes mes commandes
-                        </a>
-                        <a href="{% url 'orders:check_stock' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-search"></i> Consulter le stock
-                        </a>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>

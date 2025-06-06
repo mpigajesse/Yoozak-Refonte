@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "django_filters",
     "django_browser_reload",
+    "widget_tweaks",
     
     # Applications personnalisées
     'accounts',

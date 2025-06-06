@@ -1,78 +1,371 @@
 {% extends 'base.html' %}
 
-{% block title %}Tableau de Bord{% endblock %}
+{% block title %}Tableau de bord - Yoozak{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold text-gray-800 mb-6">Tableau de Bord</h1>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête de la page avec animation subtile -->
+    <div class="mb-8 animate-fade-in">
+        <h1 class="text-4xl font-bold text-gray-800 tracking-tight">Tableau de bord</h1>
+        <p class="text-gray-600 mt-2">{{ current_date|date:"l d F Y" }} - Aperçu de vos activités</p>
+    </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Card Commandes en attente -->
-    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
-        <div>
-            <h2 class="text-sm font-medium text-gray-500">Commandes en attente</h2>
-            <p class="text-3xl font-bold text-gray-800 mt-2">{{ pending_orders }}</p>
+    <!-- Grille de statistiques avec animations -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Carte : Commandes en attente -->
+        <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-100">
+            <div class="flex items-center">
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Commandes en attente</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ pending_orders }}</p>
+                        {% if pending_orders_change > 0 %}
+                        <span class="ml-2 text-sm text-green-500">+{{ pending_orders_change }}%</span>
+                        {% elif pending_orders_change < 0 %}
+                        <span class="ml-2 text-sm text-red-500">{{ pending_orders_change }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="bg-orange-100 rounded-full p-3">
-            <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
+        <!-- Carte : Commandes du jour -->
+        <div class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-green-100">
+            <div class="flex items-center">
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Commandes du jour</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ orders_today }}</p>
+                        <span class="ml-2 text-xs text-gray-500">/ {{ orders_target }} objectif</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Barre de progression -->
+            <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-green-500 rounded-full" style="width: {{ orders_progress }}%"></div>
+            </div>
+        </div>
+
+        <!-- Carte : Opérateurs actifs -->
+        <div class="bg-gradient-to-br from-amber-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-amber-100">
+            <div class="flex items-center">
+                <div class="bg-amber-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Opérateurs actifs</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ active_operators }}</p>
+                        <span class="ml-2 text-xs text-gray-500">sur {{ total_operators }}</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Liste des opérateurs actifs -->
+            <div class="mt-4 flex -space-x-2 overflow-hidden">
+                {% for operator in active_operator_list %}
+                <div class="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-gray-200 flex items-center justify-center" title="{{ operator.username }}">
+                    <span class="text-xs font-medium text-gray-600">{{ operator.initials }}</span>
+                        </div>
+                {% endfor %}
+                        </div>
+                        </div>
+
+        <!-- Carte : Taux de confirmation -->
+        <div class="bg-gradient-to-br from-purple-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-purple-100">
+            <div class="flex items-center">
+                <div class="bg-purple-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                        </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Taux de confirmation</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ confirmation_rate|floatformat:1 }}%</p>
+                        {% if confirmation_rate_change > 0 %}
+                        <span class="ml-2 text-sm text-green-500">+{{ confirmation_rate_change }}%</span>
+                        {% elif confirmation_rate_change < 0 %}
+                        <span class="ml-2 text-sm text-red-500">{{ confirmation_rate_change }}%</span>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Card Commandes du jour -->
-    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
-        <div>
-            <h2 class="text-sm font-medium text-gray-500">Commandes du jour</h2>
-            <p class="text-3xl font-bold text-gray-800 mt-2">{{ orders_today }}</p>
+    <!-- Section principale avec graphique et statistiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Graphique des commandes -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">Tendance des commandes</h2>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" onclick="updateChart('week')">Semaine</button>
+                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" onclick="updateChart('month')">Mois</button>
+                </div>
+            </div>
+            <div class="relative h-[400px]">
+                <canvas id="ordersChart" class="w-full"></canvas>
+            </div>
         </div>
-        <div class="bg-blue-100 rounded-full p-3">
-            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+
+        <!-- Résumé et actions rapides -->
+        <div class="space-y-6">
+            <!-- Résumé des commandes -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Résumé des commandes</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-600">Total des commandes</span>
+                        <span class="font-bold text-gray-800">{{ total_orders }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                        <span class="text-gray-600">Commandes confirmées</span>
+                        <span class="font-bold text-green-600">{{ confirmed_orders }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                        <span class="text-gray-600">Valeur totale</span>
+                        <span class="font-bold text-blue-600">{{ total_value|floatformat:2 }} €</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Actions rapides</h2>
+                <div class="grid grid-cols-1 gap-3">
+                    <a href="{% url 'orders:create_order' %}" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Nouvelle commande</span>
+                    </a>
+                    <a href="{% url 'inventory:stock_list' %}" class="flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <span>Gérer les stocks</span>
+                    </a>
+                    <a href="{% url 'orders:order_list' %}" class="flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        <span>Liste des commandes</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Card Opérateurs actifs -->
-    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
-        <div>
-            <h2 class="text-sm font-medium text-gray-500">Opérateurs actifs</h2>
-            <p class="text-3xl font-bold text-gray-800 mt-2">{{ active_operators }}</p>
+    <!-- Dernières activités -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-800">Dernières activités</h2>
+            </div>
         </div>
-        <div class="bg-green-100 rounded-full p-3">
-            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        
+        <!-- Contenu des activités -->
+        <div id="activities-content" class="divide-y divide-gray-100">
+            {% include "order_management/includes/activities_content.html" with grouped_activities=grouped_activities %}
         </div>
-    </div>
 
-    <!-- Card Total des commandes -->
-    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
-        <div>
-            <h2 class="text-sm font-medium text-gray-500">Total des commandes</h2>
-            <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_orders }}</p>
-        </div>
-        <div class="bg-indigo-100 rounded-full p-3">
-            <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-        </div>
-    </div>
-
-    <!-- Card Commandes confirmées -->
-    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
-        <div>
-            <h2 class="text-sm font-medium text-gray-500">Commandes confirmées</h2>
-            <p class="text-3xl font-bold text-gray-800 mt-2">{{ confirmed_orders }}</p>
-            <p class="text-sm text-gray-500 mt-2">
-                Taux de confirmation : {{ confirmation_rate|floatformat:1 }}%
-            </p>
-        </div>
-        <div class="bg-teal-100 rounded-full p-3">
-            <svg class="w-8 h-8 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        </div>
-    </div>
-
-    <!-- Card Valeur totale -->
-    <div class="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between transform hover:-translate-y-1 transition-transform duration-300">
-        <div>
-            <h2 class="text-sm font-medium text-gray-500">Valeur totale</h2>
-            <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_value|floatformat:2 }} DH</p>
-        </div>
-        <div class="bg-pink-100 rounded-full p-3">
-            <svg class="w-8 h-8 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        <!-- Pagination et footer -->
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div class="flex justify-between items-center">
+                <span id="activities-info" class="text-sm text-gray-500">
+                    Affichage des activités des 2 dernières semaines
+                </span>
+                
+                <!-- Contrôles de pagination -->
+                <div id="pagination-controls" class="flex items-center space-x-2">
+                    <button id="prev-page" class="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    
+                    <span id="page-info" class="text-sm text-gray-700">
+                        Page 1 sur {{ activities_paginator.num_pages }}
+                    </span>
+                    
+                    <button id="next-page" class="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" {% if not activities_paginator.page_range|length > 1 %}disabled{% endif %}>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Loading indicator -->
+<div id="activities-loading" class="hidden fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-4 flex items-center space-x-3">
+        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+        <span class="text-gray-700">Chargement...</span>
+    </div>
+</div>
+
+<!-- Script pour le graphique -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('ordersChart').getContext('2d');
+    const ordersChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: JSON.parse('{{ chart_labels|safe|escapejs }}'),
+            datasets: [{
+                label: 'Commandes',
+                data: JSON.parse('{{ chart_data|safe|escapejs }}'),
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#1f2937',
+                    bodyColor: '#1f2937',
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            return 'Date: ' + tooltipItems[0].label;
+                        },
+                        label: function(context) {
+                            return 'Commandes: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        precision: 0
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+
+    // Fonction pour mettre à jour le graphique
+    window.updateChart = function(period) {
+        fetch(`/api/orders/chart-data/?period=${period}`)
+            .then(response => response.json())
+            .then(data => {
+                ordersChart.data.labels = data.labels;
+                ordersChart.data.datasets[0].data = data.values;
+                ordersChart.update();
+            })
+            .catch(error => {
+                console.error('Erreur lors de la mise à jour du graphique:', error);
+            });
+    };
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentPage = 1;
+    let totalPages = {{ activities_paginator.num_pages }};
+    
+    const activitiesContent = document.getElementById('activities-content');
+    const paginationControls = document.getElementById('pagination-controls');
+    const prevButton = document.getElementById('prev-page');
+    const nextButton = document.getElementById('next-page');
+    const pageInfo = document.getElementById('page-info');
+    const activitiesInfo = document.getElementById('activities-info');
+    const loadingIndicator = document.getElementById('activities-loading');
+    
+    function updatePagination(data) {
+        currentPage = data.current_page;
+        totalPages = data.total_pages;
+        
+        // Mettre à jour les boutons
+        prevButton.disabled = !data.has_previous;
+        nextButton.disabled = !data.has_next;
+        
+        // Mettre à jour l'info de page
+        pageInfo.textContent = `Page ${currentPage} sur ${totalPages}`;
+        
+        // Mettre à jour l'info des activités
+        activitiesInfo.textContent = `${data.total_activities} activité${data.total_activities > 1 ? 's' : ''} trouvée${data.total_activities > 1 ? 's' : ''}`;
+    }
+    
+    function loadPage(page) {
+        loadingIndicator.classList.remove('hidden');
+        
+        fetch(`{% url 'activities_ajax' %}?page=${page}`)
+            .then(response => response.json())
+            .then(data => {
+                activitiesContent.innerHTML = data.html;
+                updatePagination(data);
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des activités:', error);
+            })
+            .finally(() => {
+                loadingIndicator.classList.add('hidden');
+            });
+    }
+    
+    // Event listeners pour les boutons de pagination
+    prevButton.addEventListener('click', function() {
+        if (currentPage > 1) {
+            loadPage(currentPage - 1);
+        }
+    });
+    
+    nextButton.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+            loadPage(currentPage + 1);
+        }
+    });
+});
+</script>
 {% endblock %} 

@@ -3,138 +3,187 @@
 {% block title %}Corriger la commande {{ order.order_number }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Correction de la commande {{ order.order_number }}
-                    </h4>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">
+                Correction de la commande {{ order.order_number }}
+            </h1>
+            <p class="mt-1 text-sm text-gray-500">Corrigez les informations de la commande</p>
+        </div>
+        <a href="{% url 'orders:order_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Retour à la liste
+        </a>
+    </div>
+
+    <!-- Formulaire de correction -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="p-6">
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+
+                <!-- Informations client -->
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Informations client</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="client_name" class="block text-sm font-medium text-gray-700">Nom du client</label>
+                            <input type="text" 
+                                   name="client_name" 
+                                   id="client_name" 
+                                   value="{{ order.client_name }}"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700">Téléphone</label>
+                            <input type="tel" 
+                                   name="phone" 
+                                   id="phone" 
+                                   value="{{ order.phone }}"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="post" class="needs-validation" novalidate>
-                        {% csrf_token %}
-                        
-                        <!-- Informations client -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="border-bottom pb-2">Informations client</h5>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="client_name" class="form-label">Nom du client</label>
-                                <input type="text" class="form-control" id="client_name" name="client_name" 
-                                       value="{{ order.client_name }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">Téléphone</label>
-                                <input type="tel" class="form-control" id="phone" name="phone" 
-                                       value="{{ order.phone }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="address" class="form-label">Adresse</label>
-                                <input type="text" class="form-control" id="address" name="address" 
-                                       value="{{ order.address }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="city" class="form-label">Ville</label>
-                                <input type="text" class="form-control" id="city" name="city" 
-                                       value="{{ order.city }}">
-                            </div>
-                        </div>
 
-                        <!-- Articles de la commande -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="border-bottom pb-2">Articles de la commande</h5>
-                            </div>
-                            <div class="col-12">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Code produit</th>
-                                                <th>Taille</th>
-                                                <th>Couleur (AR)</th>
-                                                <th>Couleur (FR)</th>
-                                                <th>Quantité</th>
-                                                <th>Prix unitaire</th>
-                                                <th>Total</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for article in order.articles.all %}
-                                            <tr>
-                                                <td>{{ article.product_code }}</td>
-                                                <td>{{ article.size }}</td>
-                                                <td>{{ article.color_ar }}</td>
-                                                <td>{{ article.color_fr }}</td>
-                                                <td>{{ article.quantity }}</td>
-                                                <td>{{ article.price }}</td>
-                                                <td>{{ article.total_price }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colspan="6" class="text-end"><strong>Total commande:</strong></td>
-                                                <td><strong>{{ order.price }} DH</strong></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
+                <!-- Informations commande -->
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Informations commande</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label for="product" class="block text-sm font-medium text-gray-700">Produit</label>
+                            <input type="text" 
+                                   name="product" 
+                                   id="product" 
+                                   value="{{ order.product }}"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
-
-                        <!-- Notes de correction -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="border-bottom pb-2">Notes de correction</h5>
-                                <div class="mb-3">
-                                    <label for="correction_notes" class="form-label">Notes sur les corrections apportées</label>
-                                    <textarea class="form-control" id="correction_notes" name="correction_notes" 
-                                              rows="3" placeholder="Décrivez les corrections apportées à la commande..."></textarea>
-                                </div>
-                            </div>
+                        <div>
+                            <label for="quantity" class="block text-sm font-medium text-gray-700">Quantité</label>
+                            <input type="number" 
+                                   name="quantity" 
+                                   id="quantity" 
+                                   value="{{ order.quantity }}"
+                                   min="1"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
-
-                        <!-- Boutons d'action -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between">
-                                    <a href="{% url 'orders:error_orders' %}" class="btn btn-secondary">
-                                        <i class="bi bi-arrow-left"></i> Retour
-                                    </a>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-check-circle"></i> Valider les corrections
-                                    </button>
-                                </div>
-                            </div>
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-700">Prix (DH)</label>
+                            <input type="number" 
+                                   name="price" 
+                                   id="price" 
+                                   value="{{ order.price }}"
+                                   step="0.01"
+                                   min="0"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Informations livraison -->
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Informations livraison</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="region" class="block text-sm font-medium text-gray-700">Région</label>
+                            <select name="region" 
+                                    id="region" 
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Sélectionnez une région</option>
+                                {% for region in regions %}
+                                <option value="{{ region.id }}" {% if order.region_id == region.id %}selected{% endif %}>
+                                    {{ region.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="ville" class="block text-sm font-medium text-gray-700">Ville</label>
+                            <select name="ville" 
+                                    id="ville" 
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Sélectionnez une ville</option>
+                                {% for ville in villes %}
+                                <option value="{{ ville.id }}" {% if order.ville_id == ville.id %}selected{% endif %}>
+                                    {{ ville.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="address" class="block text-sm font-medium text-gray-700">Adresse</label>
+                            <textarea name="address" 
+                                      id="address" 
+                                      rows="3"
+                                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ order.address }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="flex justify-end space-x-3">
+                    <a href="{% url 'orders:order_list' %}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Annuler
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Enregistrer les modifications
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 {% block extra_js %}
 <script>
-    // Validation du formulaire
-    (function () {
-        'use strict'
-        var forms = document.querySelectorAll('.needs-validation')
-        Array.prototype.slice.call(forms).forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
-        })
-    })()
+document.addEventListener('DOMContentLoaded', function() {
+    const regionSelect = document.getElementById('region');
+    const villeSelect = document.getElementById('ville');
+    const originalVilleId = villeSelect.value;
+
+    // Fonction pour mettre à jour les villes en fonction de la région sélectionnée
+    function updateVilles() {
+        const regionId = regionSelect.value;
+        if (!regionId) {
+            villeSelect.innerHTML = '<option value="">Sélectionnez une ville</option>';
+            return;
+        }
+
+        fetch(`/api/regions/${regionId}/villes/`)
+            .then(response => response.json())
+            .then(villes => {
+                villeSelect.innerHTML = '<option value="">Sélectionnez une ville</option>';
+                villes.forEach(ville => {
+                    const option = document.createElement('option');
+                    option.value = ville.id;
+                    option.textContent = ville.name;
+                    if (ville.id === originalVilleId) {
+                        option.selected = true;
+                    }
+                    villeSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Erreur lors de la récupération des villes:', error);
+            });
+    }
+
+    // Mettre à jour les villes au chargement de la page
+    if (regionSelect.value) {
+        updateVilles();
+    }
+
+    // Écouter les changements de région
+    regionSelect.addEventListener('change', updateVilles);
+});
 </script>
 {% endblock %}
 {% endblock %} 

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if operator %}Modifier{% else %}Créer{% endif %} un Opérateur{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">
+            {% if operator %}Modifier l'opérateur{% else %}Nouvel Opérateur{% endif %}
+        </h1>
+        <a href="{% url 'accounts:operator_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Retour à la liste
+        </a>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" class="p-8 space-y-6" x-data="{ showPassword: false }">
+                {% csrf_token %}
+
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                    <div class="{% if message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% else %}bg-green-100 border-green-400 text-green-700{% endif %} px-4 py-3 rounded relative" role="alert">
+                        <span class="block sm:inline">{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Informations de connexion -->
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Informations de connexion</h3>
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- Nom d'utilisateur -->
+                        <div class="sm:col-span-3">
+                            <label for="username" class="block text-sm font-medium text-gray-700 required">
+                                Nom d'utilisateur
+                            </label>
+                            <div class="mt-1">
+                                <input type="text" name="username" id="username" 
+                                    {% if operator %}value="{{ operator.user.username }}"{% endif %}
+                                    required
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="sm:col-span-3">
+                            <label for="email" class="block text-sm font-medium text-gray-700">
+                                Email
+                            </label>
+                            <div class="mt-1">
+                                <input type="email" name="email" id="email" 
+                                    {% if operator %}value="{{ operator.user.email }}"{% endif %}
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Mot de passe -->
+                        <div class="sm:col-span-3">
+                            <label for="password1" class="block text-sm font-medium text-gray-700 {% if not operator %}required{% endif %}">
+                                Mot de passe
+                            </label>
+                            <div class="mt-1 relative">
+                                <input :type="showPassword ? 'text' : 'password'" 
+                                    name="password1" 
+                                    id="password1"
+                                    {% if not operator %}required{% endif %}
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md pr-10">
+                                <button type="button" 
+                                    @click="showPassword = !showPassword"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <svg x-show="!showPassword" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <svg x-show="showPassword" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Confirmation du mot de passe -->
+                        <div class="sm:col-span-3">
+                            <label for="password2" class="block text-sm font-medium text-gray-700 {% if not operator %}required{% endif %}">
+                                Confirmer le mot de passe
+                            </label>
+                            <div class="mt-1">
+                                <input :type="showPassword ? 'text' : 'password'" 
+                                    name="password2" 
+                                    id="password2"
+                                    {% if not operator %}required{% endif %}
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informations personnelles -->
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Informations personnelles</h3>
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- Prénom -->
+                        <div class="sm:col-span-3">
+                            <label for="first_name" class="block text-sm font-medium text-gray-700">
+                                Prénom
+                            </label>
+                            <div class="mt-1">
+                                <input type="text" name="first_name" id="first_name" 
+                                    {% if operator %}value="{{ operator.user.first_name }}"{% endif %}
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Nom -->
+                        <div class="sm:col-span-3">
+                            <label for="last_name" class="block text-sm font-medium text-gray-700">
+                                Nom
+                            </label>
+                            <div class="mt-1">
+                                <input type="text" name="last_name" id="last_name" 
+                                    {% if operator %}value="{{ operator.user.last_name }}"{% endif %}
+                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if operator %}
+                <!-- Statut du compte -->
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Statut du compte</h3>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="is_active" id="is_active" 
+                            {% if operator.is_active %}checked{% endif %}
+                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="is_active" class="ml-2 block text-sm text-gray-900">
+                            Compte actif
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="flex justify-end space-x-3">
+                    <a href="{% url 'accounts:operator_list' %}" 
+                        class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Annuler
+                    </a>
+                    <button type="submit" 
+                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
+                        {% if operator %}Mettre à jour{% else %}Créer l'opérateur{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .required:after {
+        content: " *";
+        color: #EF4444;
+    }
+</style>
+{% endblock %} 

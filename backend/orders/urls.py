@@ -16,10 +16,13 @@ urlpatterns = [
     path('admin/error-orders/', views.error_orders, name='error_orders'),
     path('admin/correct/<int:yoozak_id>/', views.correct_order, name='correct_order'),
     path('admin/cancelled-orders/', views.cancelled_orders, name='cancelled_orders'),
+    path('admin/restore/<int:yoozak_id>/', views.restore_order, name='restore_order'),
     
     # Routes pour la gestion des villes et régions
     path('admin/regions/', views.region_list, name='region_list'),
     path('admin/regions/create/', views.region_create, name='region_create'),
+    path('admin/regions/<int:region_id>/edit/', views.region_edit, name='region_edit'),
+    path('admin/regions/<int:region_id>/delete/', views.region_delete, name='region_delete'),
     path('admin/villes/create/', views.ville_create, name='ville_create'),
     path('admin/villes/<int:ville_id>/edit/', views.ville_edit, name='ville_edit'),
     path('admin/villes/<int:ville_id>/delete/', views.ville_delete, name='ville_delete'),

@@ -1,59 +1,70 @@
 {% extends 'base.html' %}
 
-{% block title %}Gestion des opérateurs{% endblock %}
+{% block title %}Gestion des Opérateurs{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <h1 class="mb-4">Gestion des opérateurs</h1>
-    
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Liste des opérateurs</h5>
-            <a href="{% url 'accounts:operator_create' %}" class="btn btn-sm btn-light">
-                <i class="bi bi-person-plus"></i> Ajouter un opérateur
-            </a>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête de la page -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Gestion des Opérateurs</h1>
+            <p class="mt-1 text-sm text-gray-500">Liste des utilisateurs pouvant gérer les commandes.</p>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped" id="operatorsTable">
-                    <thead>
+        <a href="{% url 'accounts:operator_create' %}" class="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            Ajouter un opérateur
+        </a>
+    </div>
+
+    <!-- Tableau des opérateurs -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
                         <tr>
-                            <th>Nom d'utilisateur</th>
-                            <th>Email</th>
-                            <th>Statut</th>
-                            <th>Commandes affectées</th>
-                            <th>Date de création</th>
-                            <th>Actions</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom d'utilisateur</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Commandes Affectées</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de création</th>
+                        <th scope="col" class="relative px-6 py-3">
+                            <span class="sr-only">Actions</span>
+                        </th>
                         </tr>
                     </thead>
-                    <tbody>
+                <tbody class="bg-white divide-y divide-gray-200">
                         {% for operator in operators %}
-                        <tr>
-                            <td>{{ operator.user.username }}</td>
-                            <td>{{ operator.user.email }}</td>
-                            <td>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ operator.user.username }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ operator.user.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
                                 {% if operator.is_active %}
-                                    <span class="badge bg-success">Actif</span>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Actif</span>
                                 {% else %}
-                                    <span class="badge bg-danger">Inactif</span>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactif</span>
                                 {% endif %}
                             </td>
-                            <td>{{ operator.orders_count }}</td>
-                            <td>{{ operator.date_created|date:"d/m/Y H:i" }}</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'accounts:operator_edit' operator.id %}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-pencil"></i>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ operator.orders_count }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ operator.date_created|date:"d/m/Y" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end space-x-3">
+                                <a href="{% url 'accounts:operator_edit' operator.id %}" class="text-indigo-600 hover:text-indigo-900" title="Modifier">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                     </a>
-                                    <a href="{% url 'accounts:operator_delete' operator.id %}" class="btn btn-sm btn-danger">
-                                        <i class="bi bi-trash"></i>
+                                <a href="{% url 'accounts:operator_delete' operator.id %}" class="text-red-600 hover:text-red-900" title="Supprimer">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center">Aucun opérateur trouvé</td>
+                        <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">
+                            Aucun opérateur trouvé.
+                            <a href="{% url 'accounts:operator_create' %}" class="text-indigo-600 hover:text-indigo-900 font-medium">Ajoutez-en un maintenant</a>.
+                        </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -61,19 +72,4 @@
             </div>
         </div>
     </div>
-</div>
-
-{% block extra_js %}
-<script>
-    $(document).ready(function() {
-        // Initialiser DataTables pour la pagination et la recherche
-        $('#operatorsTable').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/French.json"
-            }
-        });
-    });
-</script>
-{% endblock %}
-
 {% endblock %}

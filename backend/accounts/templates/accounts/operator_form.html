@@ -1,77 +1,105 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Créer{% endif %} un Opérateur{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{% if form.instance.pk %}Modifier{% else %}Créer{% endif %} un Opérateur</h3>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{% if form.instance.pk %}Modifier l'opérateur{% else %}Nouvel Opérateur{% endif %}</h1>
+        <a href="{% url 'accounts:operator_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Retour à la liste
+        </a>
+    </div>
+
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" class="p-8 space-y-8">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Erreur !</strong>
+                    <span class="block sm:inline">{{ form.non_field_errors }}</span>
                 </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Nom d'utilisateur</label>
-                            <input type="text" class="form-control" id="username" name="username" value="{{ form.username.value|default:'' }}" required>
-                            {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.username.errors }}
+                {% endif %}
+
+                <!-- Section Infos de Connexion -->
+                <div>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Informations de connexion</h3>
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">Nom d'utilisateur *</label>
+                            <div class="mt-1">
+                                {% render_field form.username class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %}
                             </div>
-                            {% endif %}
+                            {% for error in form.username.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
                         </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ form.email.value|default:'' }}" required>
-                            {% if form.email.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.email.errors }}
+
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email *</label>
+                            <div class="mt-1">
+                                {% render_field form.email class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %}
                             </div>
-                            {% endif %}
+                            {% for error in form.email.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
                         </div>
-                        <div class="mb-3">
-                            <label for="password1" class="form-label">Mot de passe</label>
-                            <input type="password" class="form-control" id="password1" name="password1" {% if not form.instance.pk %}required{% endif %}>
-                            {% if form.password1.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.password1.errors }}
+
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700">Mot de passe {% if not form.instance.pk %}*{% endif %}</label>
+                            <div class="mt-1">
+                                {% render_field form.password class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %}
                             </div>
-                            {% endif %}
+                             {% if form.password.help_text %}<p class="mt-2 text-sm text-gray-500">{{ form.password.help_text|safe }}</p>{% endif %}
+                            {% for error in form.password.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
                         </div>
-                        <div class="mb-3">
-                            <label for="password2" class="form-label">Confirmer le mot de passe</label>
-                            <input type="password" class="form-control" id="password2" name="password2" {% if not form.instance.pk %}required{% endif %}>
-                            {% if form.password2.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.password2.errors }}
+
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">Confirmer le mot de passe {% if not form.instance.pk %}*{% endif %}</label>
+                            <div class="mt-1">
+                                {% render_field form.password2 class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %}
                             </div>
-                            {% endif %}
+                            {% for error in form.password2.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
                         </div>
-                        <div class="mb-3">
-                            <label for="first_name" class="form-label">Prénom</label>
-                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ form.first_name.value|default:'' }}">
-                            {% if form.first_name.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.first_name.errors }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="last_name" class="form-label">Nom</label>
-                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ form.last_name.value|default:'' }}">
-                            {% if form.last_name.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.last_name.errors }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                            <a href="{% url 'accounts:operator_list' %}" class="btn btn-secondary">Retour</a>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <div class="border-t border-gray-200"></div>
+                
+                <!-- Section Infos Personnelles -->
+                <div>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Informations personnelles</h3>
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Prénom</label>
+                            <div class="mt-1">
+                                {% render_field form.first_name class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %}
+                            </div>
+                            {% for error in form.first_name.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Nom</label>
+                            <div class="mt-1">
+                                {% render_field form.last_name class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %}
+                            </div>
+                             {% for error in form.last_name.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-5">
+                    <div class="flex justify-end">
+                        <a href="{% url 'accounts:operator_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Annuler
+                        </a>
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
+                            Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>

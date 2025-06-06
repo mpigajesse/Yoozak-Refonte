@@ -1,234 +1,133 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 
-{% block title %}Mes commandes{% endblock %}
+{% block title %}Mes Commandes - Yoozak{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <h1 class="mb-4">Mes commandes</h1>
+<div class="container mx-auto px-4 py-8" x-data="{ openModal: '', selectedOrderId: null }">
     
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Liste des commandes</h5>
-            <a href="{% url 'orders:check_stock' %}" class="btn btn-light btn-sm">
-                <i class="bi bi-search"></i> Consulter le stock
-            </a>
+    <!-- En-tête de la page -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Mes Commandes</h1>
+            <p class="text-gray-600 mt-1">Liste des commandes qui vous sont assignées.</p>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped" id="ordersTable">
-                    <thead>
+        <a href="{% url 'inventory:stock_list' %}" class="mt-4 sm:mt-0 flex items-center bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm transition-colors duration-300">
+            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H4a2 2 0 01-2-2V6a2 2 0 012-2h4m6 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2v-2m14-2h4a2 2 0 012 2v2a2 2 0 01-2 2h-4m-2 2v-4a2 2 0 00-2-2h-2a2 2 0 00-2 2v4m12-14v4a2 2 0 002 2h2a2 2 0 002-2v-4a2 2 0 00-2-2h-2a2 2 0 00-2 2z"></path></svg>
+            Consulter le stock
+        </a>
+    </div>
+
+    <!-- Tableau -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
                         <tr>
-                            <th>N° Commande</th>
-                            <th>Client</th>
-                            <th>Téléphone</th>
-                            <th>Ville</th>
-                            <th>Produit</th>
-                            <th>Quantité</th>
-                            <th>Prix</th>
-                            <th>Statut</th>
-                            <th>Paiement</th>
-                            <th>Livraison</th>
-                            <th>Date création</th>
-                            <th>Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Commande</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Détails</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
-                    <tbody>
+                <tbody class="bg-white divide-y divide-gray-200">
                         {% for order in orders %}
-                        <tr>
-                            <td>{{ order.order_number }}</td>
-                            <td>
-                                {{ order.client_name }}
-                                {% if order.client_type == 'fidele' %}
-                                    <span class="badge bg-info">Fidèle</span>
-                                {% endif %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ order.order_number }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div class="font-semibold">{{ order.client_name }}</div>
+                            <div class="text-gray-500">{{ order.phone }}</div>
                             </td>
-                            <td>{{ order.phone }}</td>
-                            <td>{{ order.city }}</td>
-                            <td>{{ order.product }}</td>
-                            <td>{{ order.quantity }}</td>
-                            <td>{{ order.price }} DH</td>
-                            <td>
-                                {% if order.status == 'non_affectee' %}
-                                    <span class="badge bg-warning">Non affectée</span>
-                                {% elif order.status == 'affectee' %}
-                                    <span class="badge bg-info">Affectée</span>
-                                {% elif order.status == 'erronee' %}
-                                    <span class="badge bg-danger">Erronée</span>
-                                {% elif order.status == 'doublon' %}
-                                    <span class="badge bg-secondary">Doublon</span>
-                                {% elif order.status == 'a_confirmer' %}
-                                    <span class="badge bg-primary">À confirmer</span>
-                                {% elif order.status == 'en_cours_confirmation' %}
-                                    <span class="badge bg-info">En cours</span>
-                                {% elif order.status == 'confirmee' %}
-                                    <span class="badge bg-success">Confirmée</span>
-                                {% elif order.status == 'annulee' %}
-                                    <span class="badge bg-danger">Annulée</span>
-                                {% endif %}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div>{{ order.product }} (x{{ order.quantity }})</div>
+                            <div class="font-bold text-blue-600">{{ order.price }} DH</div>
                             </td>
-                            <td>
-                                {% if order.payment_status == 'non_paye' %}
-                                    <span class="badge bg-danger">Non payé</span>
-                                {% elif order.payment_status == 'partiellement_paye' %}
-                                    <span class="badge bg-warning">Partiel</span>
-                                {% elif order.payment_status == 'paye' %}
-                                    <span class="badge bg-success">Payé</span>
-                                {% endif %}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% with color_classes=status_colors.delivery|get_item:order.delivery_status %}
+                                    {{ color_classes.0 }} {{ color_classes.1 }}
+                                {% endwith %}
+                            ">
+                                {{ order.get_delivery_status_display }}
+                            </span>
                             </td>
-                            <td>
-                                {% if order.delivery_status == 'en_preparation' %}
-                                    <span class="badge bg-info">En préparation</span>
-                                {% elif order.delivery_status == 'en_livraison' %}
-                                    <span class="badge bg-primary">En livraison</span>
-                                {% elif order.delivery_status == 'livree' %}
-                                    <span class="badge bg-success">Livrée</span>
-                                {% elif order.delivery_status == 'retournee' %}
-                                    <span class="badge bg-danger">Retournée</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ order.creation_date|date:"d/m/Y H:i" }}</td>
-                            <td>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal{{ order.yoozak_id }}">
-                                        <i class="bi bi-check-circle"></i> Confirmer
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#editModal{{ order.yoozak_id }}">
-                                        <i class="bi bi-pencil"></i> Modifier
-                                    </button>
-                                </div>
-
-                                <!-- Modal de confirmation -->
-                                <div class="modal fade" id="confirmModal{{ order.yoozak_id }}" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Confirmer la commande</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <form method="post" action="{% url 'orders:order_confirm' order.yoozak_id %}">
-                                                {% csrf_token %}
-                                                <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label for="status" class="form-label">Statut</label>
-                                                        <select name="status" id="status" class="form-select" required>
-                                                            <option value="a_confirmer">À confirmer</option>
-                                                            <option value="en_cours_confirmation">En cours de confirmation</option>
-                                                            <option value="confirmee">Confirmée</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="motifs" class="form-label">Observations</label>
-                                                        <textarea name="motifs" id="motifs" class="form-control" rows="3">{{ order.motifs }}</textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                    <button type="submit" class="btn btn-primary">Confirmer</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Modal de modification -->
-                                <div class="modal fade" id="editModal{{ order.yoozak_id }}" tabindex="-1">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Modifier la commande</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <form method="post" action="{% url 'orders:order_edit' order.yoozak_id %}">
-                                                {% csrf_token %}
-                                                <div class="modal-body">
-                                                    <div class="row">
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="client_name" class="form-label">Nom du client</label>
-                                                            <input type="text" class="form-control" id="client_name" name="client_name" value="{{ order.client_name }}" required>
-                                                        </div>
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="phone" class="form-label">Téléphone</label>
-                                                            <input type="text" class="form-control" id="phone" name="phone" value="{{ order.phone }}" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="city" class="form-label">Ville</label>
-                                                            <input type="text" class="form-control" id="city" name="city" value="{{ order.city }}" required>
-                                                        </div>
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="address" class="form-label">Adresse</label>
-                                                            <input type="text" class="form-control" id="address" name="address" value="{{ order.address }}">
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="product" class="form-label">Produit</label>
-                                                            <input type="text" class="form-control" id="product" name="product" value="{{ order.product }}" required>
-                                                        </div>
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="quantity" class="form-label">Quantité</label>
-                                                            <input type="number" class="form-control" id="quantity" name="quantity" value="{{ order.quantity }}" min="1" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="payment_status" class="form-label">État du paiement</label>
-                                                            <select name="payment_status" id="payment_status" class="form-select">
-                                                                <option value="non_paye" {% if order.payment_status == 'non_paye' %}selected{% endif %}>Non payé</option>
-                                                                <option value="partiellement_paye" {% if order.payment_status == 'partiellement_paye' %}selected{% endif %}>Partiellement payé</option>
-                                                                <option value="paye" {% if order.payment_status == 'paye' %}selected{% endif %}>Payé</option>
-                                                            </select>
-                                                        </div>
-                                                        <div class="col-md-6 mb-3">
-                                                            <label for="delivery_status" class="form-label">État de la livraison</label>
-                                                            <select name="delivery_status" id="delivery_status" class="form-select">
-                                                                <option value="en_preparation" {% if order.delivery_status == 'en_preparation' %}selected{% endif %}>En préparation</option>
-                                                                <option value="en_livraison" {% if order.delivery_status == 'en_livraison' %}selected{% endif %}>En livraison</option>
-                                                                <option value="livree" {% if order.delivery_status == 'livree' %}selected{% endif %}>Livrée</option>
-                                                                <option value="retournee" {% if order.delivery_status == 'retournee' %}selected{% endif %}>Retournée</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="modifications" class="form-label">Notes de modification</label>
-                                                        <textarea name="modifications" id="modifications" class="form-control" rows="3">{{ order.modifications }}</textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                    <button type="submit" class="btn btn-primary">Enregistrer</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.creation_date|date:"d/m/Y H:i" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end space-x-3">
+                                <button @click="openModal = 'confirm'; selectedOrderId = {{ order.yoozak_id }}" class="text-green-600 hover:text-green-800"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
+                                <button @click="openModal = 'edit'; selectedOrderId = {{ order.yoozak_id }}" class="text-blue-600 hover:text-blue-800"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"></path></svg></button>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="12" class="text-center">Aucune commande à afficher</td>
+                        <td colspan="6" class="text-center py-12 text-gray-500">
+                            <p>Aucune commande à afficher.</p>
+                        </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+        </div>
+    </div>
+
+    <!-- Conteneur des Modales -->
+    {% for order in orders %}
+    <div x-show="selectedOrderId === {{ order.yoozak_id }}" style="display: none;">
+        <!-- Overlay -->
+        <div x-show="openModal" class="fixed inset-0 z-30 bg-black bg-opacity-50" @click="openModal = ''"></div>
+        
+        <!-- Modale de Confirmation -->
+        <div x-show="openModal === 'confirm'" x-transition class="fixed inset-0 z-40 flex items-center justify-center p-4">
+            <div @click.away="openModal = ''" class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                <h3 class="text-lg font-medium text-gray-900">Confirmer #{{ order.order_number }}</h3>
+                <form method="post" action="{% url 'orders:order_confirm' order.yoozak_id %}" class="mt-4">
+                    {% csrf_token %}
+                    {% with form=confirmation_form_template %}
+                        <div class="space-y-4">
+                           {{ form.as_p }}
+                        </div>
+                    {% endwith %}
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700">Confirmer</button>
+                        <button type="button" @click="openModal = ''" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modale de Modification -->
+        <div x-show="openModal === 'edit'" x-transition class="fixed inset-0 z-40 flex items-center justify-center p-4">
+            <div @click.away="openModal = ''" class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+                <h3 class="text-lg font-medium text-gray-900">Modifier #{{ order.order_number }}</h3>
+                <form method="post" action="{% url 'orders:order_edit' order.yoozak_id %}" class="mt-4">
+                    {% csrf_token %}
+                    {% with form=edit_form_template %}
+                        <div class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8">
+                            {% for field in form %}
+                            <div>
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                                {% render_field field class+="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endwith %}
+                    <div class="mt-8 flex justify-end space-x-3">
+                        <button type="button" @click="openModal = ''" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Annuler</button>
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Enregistrer</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+    {% endfor %}
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        $('#ordersTable').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json'
-            },
-            order: [[10, 'desc']], // Trier par date de création décroissante
-            pageLength: 25,
-            responsive: true
-        });
-    });
+    // Plus de JS nécessaire ici pour le moment, Alpine.js gère l'interactivité.
 </script>
-{% endblock %}
 {% endblock %} 

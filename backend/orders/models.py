@@ -66,6 +66,7 @@ class Order(models.Model):
     source = models.CharField(max_length=50, blank=True, null=True, verbose_name="Source")
     source_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="ID Source")
     client_type = models.CharField(max_length=20, choices=CLIENT_TYPE_CHOICES, default='nouveau', verbose_name="Type de client")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
     
     # Relations
     operator = models.ForeignKey(Operator, on_delete=models.SET_NULL, null=True, related_name='orders', verbose_name="Opérateur")
