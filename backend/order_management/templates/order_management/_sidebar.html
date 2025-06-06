@@ -27,6 +27,9 @@
             <span>Tableau de bord</span>
         </a>
 
+        {% if user.is_staff %}
+        <!-- MENU ADMINISTRATEUR -->
+        
         <!-- Gestion des commandes -->
         <div class="mt-2">
             <button @click="activeAccordion = (activeAccordion === 'orders' ? '' : 'orders')" class="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none">
@@ -62,7 +65,6 @@
             </div>
         </div>
 
-        {% if user.is_staff %}
         <!-- Gestion des opérateurs -->
         <div class="mt-2">
             <button @click="activeAccordion = (activeAccordion === 'accounts' ? '' : 'accounts')" class="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none">
@@ -98,6 +100,24 @@
                 <a href="{% url 'sync:logs' %}" class="block py-2 px-2 text-sm rounded-md hover:bg-gray-700 {% if active_page == 'sync_logs' %}bg-gray-700{% endif %}">Voir les logs</a>
             </div>
         </div>
+
+        {% else %}
+        <!-- MENU OPERATEUR -->
+        
+        <!-- Mes Commandes -->
+        <a href="{% url 'orders:operator_orders' %}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-md hover:bg-gray-700 {% if active_page == 'operator_orders' %}bg-gray-700{% endif %}">
+            <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            <span>Mes Commandes</span>
+        </a>
+
+        <!-- Consultation du Stock -->
+        <a href="{% url 'inventory:stock_list' %}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-md hover:bg-gray-700 {% if active_page == 'stock_list' %}bg-gray-700{% endif %}">
+            <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>                      
+            <span>Consultation du Stock</span>
+        </a>
+
         {% endif %}
     </nav>
 </aside> 

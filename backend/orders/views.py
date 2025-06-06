@@ -20,8 +20,21 @@ def is_admin(user):
     return user.is_authenticated and user.is_staff
 
 def is_logistics(user):
-    """Vérifie si l'utilisateur appartient au service logistique"""
-    return user.is_authenticated and user.groups.filter(name='Logistics').exists()
+    """Vérifie si l'utilisateur fait partie du service logistique"""
+    return user.is_authenticated and user.is_staff
+
+def is_operator(user):
+    """Vérifie si l'utilisateur est un opérateur actif"""
+    return user.is_authenticated and hasattr(user, 'operator_profile') and user.operator_profile.is_active
+
+def can_view_order(user, order):
+    """Vérifie si l'utilisateur peut voir les détails d'une commande"""
+    if is_admin(user):
+        return True
+    if is_operator(user):
+        # L'opérateur peut voir seulement ses commandes assignées
+        return order.operator == user.operator_profile
+    return False
 
 # Ajouter après les autres constantes
 CANCELLATION_REASONS = [
@@ -259,15 +272,27 @@ def order_list(request):
     return render(request, 'orders/order_list.html', context)
 
 @login_required
-@user_passes_test(is_admin)
 def order_detail(request, yoozak_id):
-    """Détail d'une commande pour l'administrateur"""
+    """Détail d'une commande - accessible aux admins et opérateurs assignés"""
     order = get_object_or_404(Order, yoozak_id=yoozak_id)
+    
+    # Vérifier les permissions
+    if not can_view_order(request.user, order):
+        messages.warning(request, "Vous n'êtes pas autorisé à voir les détails de cette commande.")
+        if is_operator(request.user):
+            return redirect('orders:operator_orders')
+        else:
+            return redirect('orders:order_list')
+    
     operators = Operator.objects.filter(is_active=True)
+    
+    # Déterminer si l'utilisateur peut modifier (seulement les admins)
+    can_edit = is_admin(request.user)
     
     context = {
         'order': order,
         'operators': operators,
+        'can_edit': can_edit,
     }
     return render(request, 'orders/order_detail.html', context)
 
@@ -435,7 +460,7 @@ def bulk_assign(request):
 def operator_orders(request):
     """Vue pour afficher les commandes assignées à un opérateur"""
     try:
-        operator = request.user.operator
+        operator = request.user.operator_profile
         orders = Order.objects.filter(operator=operator).order_by('-creation_date')
     except Operator.DoesNotExist:
         orders = Order.objects.none()
@@ -461,7 +486,7 @@ def order_confirm(request, yoozak_id):
         messages.success(request, f"La commande #{order.order_number} a été mise à jour.")
     else:
         messages.error(request, "Erreur lors de la confirmation. Veuillez vérifier les données.")
-        return redirect('orders:operator_orders')
+    return redirect('orders:operator_orders')
 
 @login_required
 @require_POST
@@ -649,7 +674,7 @@ def add_article(request, order_id):
     order = get_object_or_404(Order, yoozak_id=order_id)
     
     try:
-        article = ArticleCommande.objects.create(
+        ArticleCommande.objects.create(
             order=order,
             product_code=request.POST.get('product_code'),
             size=request.POST.get('size'),
@@ -664,7 +689,11 @@ def add_article(request, order_id):
         order.price = total_price
         order.save()
         
-        return redirect('orders:order_list')
+        # Redirection conditionnelle selon le type d'utilisateur
+        if is_admin(request.user):
+            return redirect('orders:order_list')
+        else:
+            return redirect('orders:operator_orders')
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 

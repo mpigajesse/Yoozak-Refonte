@@ -21,12 +21,21 @@
                                 {% endif %}
                             </p>
                         </div>
+        {% if user.is_staff %}
         <a href="{% url 'orders:order_list' %}" class="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Retour à la liste
         </a>
+        {% else %}
+        <a href="{% url 'orders:operator_orders' %}" class="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Retour à mes commandes
+        </a>
+        {% endif %}
                     </div>
                     
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -178,7 +187,7 @@
             </div>
             
             <!-- Actions -->
-            {% if user.is_staff %}
+            {% if can_edit %}
             <div class="bg-white shadow-lg rounded-lg">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Actions</h3>

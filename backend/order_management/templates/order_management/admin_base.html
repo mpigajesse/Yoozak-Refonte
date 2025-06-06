@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yoozak - Administration</title>
+    {% load static %}
+    {% load static tailwind_tags %}
+    {% tailwind_css %}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans" x-data="{ sidebarOpen: true }">
+    <div class="flex min-h-screen">
+        
+        <!-- Sidebar Admin -->
+        {% include 'order_management/_sidebar.html' %}
+
+        <!-- Contenu principal -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <header class="bg-white shadow-sm sticky top-0 z-20">
+                <div class="w-full mx-auto py-3 px-6 flex justify-between items-center">
+                    <!-- Bouton pour ouvrir/fermer la sidebar -->
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-600 focus:outline-none">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 6H20M4 12H20M4 18H11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    
+                    <div class="flex items-center">
+                        <span class="text-gray-700">Bonjour, <strong>{{ user.username }}</strong> (Admin)</span>
+                        <a href="{% url 'accounts:logout' %}" class="ml-4 text-gray-500 hover:text-gray-700" title="Déconnexion">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenu de la page -->
+            <main class="flex-1 bg-gray-50 p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html> 

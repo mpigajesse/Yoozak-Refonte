@@ -8,7 +8,6 @@ urlpatterns = [
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin/list/', views.order_list, name='order_list'),
     path('admin/confirmed/', views.confirmed_orders_list, name='confirmed_orders_list'),
-    path('admin/detail/<int:yoozak_id>/', views.order_detail, name='order_detail'),
     path('admin/assign/<int:yoozak_id>/', views.assign_order, name='assign_order'),
     path('admin/cancel/<int:yoozak_id>/', views.cancel_order, name='cancel_order'),
     path('admin/bulk-assign/', views.bulk_assign, name='bulk_assign'),
@@ -32,6 +31,9 @@ urlpatterns = [
     path('operator/confirm/<int:yoozak_id>/', views.order_confirm, name='order_confirm'),
     path('operator/edit/<int:yoozak_id>/', views.order_edit, name='order_edit'),
     path('operator/stock/', views.check_stock, name='check_stock'),
+    
+    # Route partagée pour le détail des commandes (accessible aux admins et opérateurs)
+    path('detail/<int:yoozak_id>/', views.order_detail, name='order_detail'),
     
     # Routes pour le service logistique
     path('logistics/dashboard/', views.logistics_dashboard, name='logistics_dashboard'),

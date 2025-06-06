@@ -1,10 +1,9 @@
 {% extends 'base.html' %}
-{% load widget_tweaks %}
 
 {% block title %}Mes Commandes - Yoozak{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8" x-data="{ openModal: '', selectedOrderId: null }">
+<div class="container mx-auto px-4 py-8" x-data="{ openModal: '', selectedOrderId: null, selectedOrder: null }">
     
     <!-- En-tête de la page -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
@@ -35,7 +34,11 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                         {% for order in orders %}
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ order.order_number }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <a href="{% url 'orders:order_detail' order.yoozak_id %}" class="text-indigo-600 hover:text-indigo-900 hover:underline">
+                                {{ order.order_number }}
+                            </a>
+                            </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             <div class="font-semibold">{{ order.client_name }}</div>
                             <div class="text-gray-500">{{ order.phone }}</div>
@@ -46,9 +49,12 @@
                             </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {% with color_classes=status_colors.delivery|get_item:order.delivery_status %}
-                                    {{ color_classes.0 }} {{ color_classes.1 }}
-                                {% endwith %}
+                                {% if order.delivery_status == 'en_preparation' %}bg-blue-100 text-blue-800
+                                {% elif order.delivery_status == 'en_livraison' %}bg-yellow-100 text-yellow-800
+                                {% elif order.delivery_status == 'livree' %}bg-green-100 text-green-800
+                                {% elif order.delivery_status == 'retournee' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800
+                                {% endif %}
                             ">
                                 {{ order.get_delivery_status_display }}
                             </span>
@@ -56,15 +62,33 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.creation_date|date:"d/m/Y H:i" }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-3">
-                                <button @click="openModal = 'confirm'; selectedOrderId = {{ order.yoozak_id }}" class="text-green-600 hover:text-green-800"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
-                                <button @click="openModal = 'edit'; selectedOrderId = {{ order.yoozak_id }}" class="text-blue-600 hover:text-blue-800"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"></path></svg></button>
+                                <button @click="openModal = 'confirm'; selectedOrderId = {{ order.yoozak_id }}" 
+                                        class="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-green-50 transition-colors" 
+                                        title="Confirmer la commande">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </button>
+                                <button @click="openModal = 'edit'; selectedOrderId = {{ order.yoozak_id }}" 
+                                        class="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                                        title="Modifier la commande">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"></path>
+                                    </svg>
+                                </button>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
                         <td colspan="6" class="text-center py-12 text-gray-500">
-                            <p>Aucune commande à afficher.</p>
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <p class="text-lg font-medium">Aucune commande assignée</p>
+                                <p class="text-sm text-gray-400">Les nouvelles commandes apparaîtront ici</p>
+                            </div>
                         </td>
                         </tr>
                         {% endfor %}
@@ -73,61 +97,274 @@
         </div>
     </div>
 
-    <!-- Conteneur des Modales -->
-    {% for order in orders %}
-    <div x-show="selectedOrderId === {{ order.yoozak_id }}" style="display: none;">
-        <!-- Overlay -->
-        <div x-show="openModal" class="fixed inset-0 z-30 bg-black bg-opacity-50" @click="openModal = ''"></div>
-        
-        <!-- Modale de Confirmation -->
-        <div x-show="openModal === 'confirm'" x-transition class="fixed inset-0 z-40 flex items-center justify-center p-4">
-            <div @click.away="openModal = ''" class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                <h3 class="text-lg font-medium text-gray-900">Confirmer #{{ order.order_number }}</h3>
-                <form method="post" action="{% url 'orders:order_confirm' order.yoozak_id %}" class="mt-4">
-                    {% csrf_token %}
-                    {% with form=confirmation_form_template %}
-                        <div class="space-y-4">
-                           {{ form.as_p }}
-                        </div>
-                    {% endwith %}
-                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700">Confirmer</button>
-                        <button type="button" @click="openModal = ''" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50">Annuler</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <!-- Modale de Confirmation -->
+    <div x-show="openModal === 'confirm'" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay -->
+            <div x-show="openModal === 'confirm'" @click="openModal = ''" 
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
-        <!-- Modale de Modification -->
-        <div x-show="openModal === 'edit'" x-transition class="fixed inset-0 z-40 flex items-center justify-center p-4">
-            <div @click.away="openModal = ''" class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
-                <h3 class="text-lg font-medium text-gray-900">Modifier #{{ order.order_number }}</h3>
-                <form method="post" action="{% url 'orders:order_edit' order.yoozak_id %}" class="mt-4">
-                    {% csrf_token %}
-                    {% with form=edit_form_template %}
-                        <div class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8">
-                            {% for field in form %}
-                            <div>
-                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-                                {% render_field field class+="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %}
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+            <!-- Contenu de la modale -->
+            <div x-show="openModal === 'confirm'" @click.away="openModal = ''"
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                
+                {% for order in orders %}
+                <div x-show="selectedOrderId === {{ order.yoozak_id }}">
+                    <form method="post" action="{% url 'orders:order_confirm' order.yoozak_id %}">
+                        {% csrf_token %}
+                        <!-- En-tête -->
+                        <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-lg leading-6 font-semibold text-white">Confirmer la commande</h3>
+                                    <p class="text-green-100 text-sm">{{ order.order_number }} - {{ order.client_name }}</p>
+                                </div>
                             </div>
-                            {% endfor %}
                         </div>
-                    {% endwith %}
-                    <div class="mt-8 flex justify-end space-x-3">
-                        <button type="button" @click="openModal = ''" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Annuler</button>
-                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Enregistrer</button>
-                    </div>
-                </form>
+
+                        <!-- Corps -->
+                        <div class="px-6 py-4 space-y-4">
+                            <!-- Statut de la commande -->
+                            <div>
+                                <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Statut de la commande
+                                </label>
+                                <select name="status" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                    <option value="confirmee">✓ Confirmée</option>
+                                    <option value="annulee">✗ Annulée</option>
+                                </select>
+                            </div>
+
+                            <!-- Observations -->
+                            <div>
+                                <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Observations (optionnel)
+                                </label>
+                                <textarea name="motifs" rows="3" placeholder="Ajouter des commentaires sur cette commande..."
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-400"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Pied -->
+                        <div class="bg-gray-50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
+                            <button type="button" @click="openModal = ''" 
+                                    class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Annuler
+                            </button>
+                            <button type="submit" 
+                                    class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Confirmer la commande
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
-    {% endfor %}
+
+    <!-- Modale de Modification -->
+    <div x-show="openModal === 'edit'" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay -->
+            <div x-show="openModal === 'edit'" @click="openModal = ''" 
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+            <!-- Contenu de la modale -->
+            <div x-show="openModal === 'edit'" @click.away="openModal = ''"
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                
+                {% for order in orders %}
+                <div x-show="selectedOrderId === {{ order.yoozak_id }}">
+                    <form method="post" action="{% url 'orders:order_edit' order.yoozak_id %}">
+                        {% csrf_token %}
+                        <!-- En-tête -->
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-lg leading-6 font-semibold text-white">Modifier la commande</h3>
+                                    <p class="text-blue-100 text-sm">{{ order.order_number }} - {{ order.client_name }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Corps -->
+                        <div class="px-6 py-6 space-y-6">
+                            <!-- Section Client -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                        Ville
+                                    </label>
+                                    <input type="text" name="city" value="{{ order.city|default:'' }}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                        </svg>
+                                        Téléphone
+                                    </label>
+                                    <input type="tel" name="phone" value="{{ order.phone|default:'' }}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    Adresse complète
+                                </label>
+                                <textarea name="address" rows="2" placeholder="Adresse de livraison..."
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400">{{ order.address|default:'' }}</textarea>
+                            </div>
+
+                            <!-- Section Produit -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                        </svg>
+                                        Article
+                                    </label>
+                                    <input type="text" name="product" value="{{ order.product|default:'' }}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                        </svg>
+                                        Quantité
+                                    </label>
+                                    <input type="number" name="quantity" value="{{ order.quantity|default:'1' }}" min="1"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                            </div>
+
+                            <!-- Section Statuts -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        État paiement
+                                    </label>
+                                    <select name="payment_status" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="non_paye" {% if order.payment_status == 'non_paye' %}selected{% endif %}>Non payé</option>
+                                        <option value="paye" {% if order.payment_status == 'paye' %}selected{% endif %}>Payé</option>
+                                        <option value="partiellement_paye" {% if order.payment_status == 'partiellement_paye' %}selected{% endif %}>Partiellement payé</option>
+                                        <option value="rembourse" {% if order.payment_status == 'rembourse' %}selected{% endif %}>Remboursé</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                        </svg>
+                                        État livraison
+                                    </label>
+                                    <select name="delivery_status" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="en_preparation" {% if order.delivery_status == 'en_preparation' %}selected{% endif %}>En préparation</option>
+                                        <option value="en_livraison" {% if order.delivery_status == 'en_livraison' %}selected{% endif %}>En livraison</option>
+                                        <option value="livree" {% if order.delivery_status == 'livree' %}selected{% endif %}>Livrée</option>
+                                        <option value="retournee" {% if order.delivery_status == 'retournee' %}selected{% endif %}>Retournée</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Modifications -->
+                            <div>
+                                <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Notes de modification
+                                </label>
+                                <textarea name="modifications" rows="3" placeholder="Décrire les modifications apportées..."
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400">{{ order.modifications|default:'' }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Pied -->
+                        <div class="bg-gray-50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
+                            <button type="button" @click="openModal = ''" 
+                                    class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Annuler
+                            </button>
+                            <button type="submit" 
+                                    class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Enregistrer les modifications
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Plus de JS nécessaire ici pour le moment, Alpine.js gère l'interactivité.
+// Fonctionnalités supplémentaires peuvent être ajoutées ici
 </script>
-{% endblock %} 
+{% endblock %}

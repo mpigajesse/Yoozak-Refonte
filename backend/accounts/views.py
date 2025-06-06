@@ -118,33 +118,11 @@ def operator_delete(request, operator_id):
     }
     return render(request, 'accounts/operator_confirm_delete.html', context)
 
-@login_required
-def operator_dashboard(request):
-    """Tableau de bord pour les opérateurs"""
-    # Vérifier si l'utilisateur est un opérateur
-    try:
-        operator = request.user.operator_profile
-    except:
-        return redirect('admin:index')
-    
-    # Récupérer les commandes affectées à cet opérateur
-    orders = Order.objects.filter(
-        operator=operator
-    ).exclude(
-        status__in=['confirmee', 'annulee']
-    ).order_by('creation_date')
-    
-    context = {
-        'operator': operator,
-        'orders': orders,
-    }
-    return render(request, 'accounts/operator_dashboard.html', context)
-
 def logout_view(request):
     """Vue pour la déconnexion"""
     # Vérifier si la déconnexion a été initiée depuis l'interface d'administration
     is_from_admin = request.path.startswith('/admin/logout')
-
+    
     # Déconnecter l'utilisateur
     logout(request)
 
@@ -160,15 +138,8 @@ def logout_view(request):
 
 def login_view(request):
     """Vue pour la connexion"""
-    if request.user.is_authenticated:
-        # Vérifier si la session a expiré
-        if not request.session.get('password_verified', False):
-            logout(request)
-            messages.warning(request, "Veuillez vous reconnecter pour continuer.")
-            return redirect('accounts:login')
-        
-        # Rediriger vers la page d'accueil qui choisit le bon tableau de bord
-        return redirect('home')
+    # Ne pas rediriger automatiquement si déjà connecté
+    # Laisser l'utilisateur accéder à la page de login
         
     if request.method == 'POST':
         form = LoginForm(request.POST)

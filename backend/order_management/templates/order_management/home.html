@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'order_management/admin_base.html' %}
 
 {% block title %}Tableau de bord - Yoozak{% endblock %}
 
@@ -186,30 +186,26 @@
             {% include "order_management/includes/activities_content.html" with grouped_activities=grouped_activities %}
         </div>
 
-        <!-- Pagination et footer -->
-        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
-            <div class="flex justify-between items-center">
-                <span id="activities-info" class="text-sm text-gray-500">
-                    Affichage des activités des 2 dernières semaines
-                </span>
-                
-                <!-- Contrôles de pagination -->
-                <div id="pagination-controls" class="flex items-center space-x-2">
-                    <button id="prev-page" class="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-                    
-                    <span id="page-info" class="text-sm text-gray-700">
-                        Page 1 sur {{ activities_paginator.num_pages }}
-                    </span>
-                    
-                    <button id="next-page" class="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" {% if not activities_paginator.page_range|length > 1 %}disabled{% endif %}>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
+        <!-- Pagination -->
+        <div id="activities-pagination" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+                <button id="prev-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Précédent
+                </button>
+                <button id="next-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Suivant
+                </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700" id="pagination-info">
+                        Affichage de <span class="font-medium">1</span> à <span class="font-medium">5</span> sur <span class="font-medium">{{ activities_paginator.count }}</span> activités
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination" id="pagination-controls">
+                        <!-- Les contrôles de pagination seront générés par JavaScript -->
+                    </nav>
                 </div>
             </div>
         </div>
@@ -313,28 +309,71 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     let totalPages = {{ activities_paginator.num_pages }};
+    let totalCount = {{ activities_paginator.count }};
     
     const activitiesContent = document.getElementById('activities-content');
-    const paginationControls = document.getElementById('pagination-controls');
-    const prevButton = document.getElementById('prev-page');
-    const nextButton = document.getElementById('next-page');
-    const pageInfo = document.getElementById('page-info');
-    const activitiesInfo = document.getElementById('activities-info');
     const loadingIndicator = document.getElementById('activities-loading');
+    
+    // Éléments mobile
+    const prevMobile = document.getElementById('prev-mobile');
+    const nextMobile = document.getElementById('next-mobile');
+    
+    // Éléments desktop
+    const prevDesktop = document.getElementById('prev-desktop');
+    const nextDesktop = document.getElementById('next-desktop');
+    const pageNumbers = document.getElementById('page-numbers');
+    const startIndex = document.getElementById('start-index');
+    const endIndex = document.getElementById('end-index');
+    const totalCountSpan = document.getElementById('total-count');
     
     function updatePagination(data) {
         currentPage = data.current_page;
         totalPages = data.total_pages;
+        totalCount = data.total_activities;
         
-        // Mettre à jour les boutons
-        prevButton.disabled = !data.has_previous;
-        nextButton.disabled = !data.has_next;
+        // Mise à jour des boutons mobile
+        prevMobile.disabled = !data.has_previous;
+        nextMobile.disabled = !data.has_next;
         
-        // Mettre à jour l'info de page
-        pageInfo.textContent = `Page ${currentPage} sur ${totalPages}`;
+        // Mise à jour des boutons desktop
+        prevDesktop.disabled = !data.has_previous;
+        nextDesktop.disabled = !data.has_next;
         
-        // Mettre à jour l'info des activités
-        activitiesInfo.textContent = `${data.total_activities} activité${data.total_activities > 1 ? 's' : ''} trouvée${data.total_activities > 1 ? 's' : ''}`;
+        // Mise à jour des informations de pagination
+        const start = ((currentPage - 1) * 5) + 1;
+        const end = Math.min(currentPage * 5, totalCount);
+        
+        startIndex.textContent = start;
+        endIndex.textContent = end;
+        totalCountSpan.textContent = totalCount;
+        
+        // Mise à jour des numéros de page
+        updatePageNumbers();
+    }
+    
+    function updatePageNumbers() {
+        pageNumbers.innerHTML = '';
+        
+        // Afficher les numéros de page (3 pages avant et après la page actuelle)
+        const startPage = Math.max(1, currentPage - 3);
+        const endPage = Math.min(totalPages, currentPage + 3);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                // Page actuelle
+                const span = document.createElement('span');
+                span.className = 'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-700';
+                span.textContent = i;
+                pageNumbers.appendChild(span);
+            } else {
+                // Autres pages
+                const button = document.createElement('button');
+                button.className = 'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50';
+                button.textContent = i;
+                button.addEventListener('click', () => loadPage(i));
+                pageNumbers.appendChild(button);
+            }
+        }
     }
     
     function loadPage(page) {
@@ -354,18 +393,39 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Event listeners pour les boutons de pagination
-    prevButton.addEventListener('click', function() {
+    // Event listeners pour les boutons mobiles
+    prevMobile.addEventListener('click', function() {
         if (currentPage > 1) {
             loadPage(currentPage - 1);
         }
     });
     
-    nextButton.addEventListener('click', function() {
+    nextMobile.addEventListener('click', function() {
         if (currentPage < totalPages) {
             loadPage(currentPage + 1);
         }
     });
+    
+    // Event listeners pour les boutons desktop
+    prevDesktop.addEventListener('click', function() {
+        if (currentPage > 1) {
+            loadPage(currentPage - 1);
+        }
+    });
+    
+    nextDesktop.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+            loadPage(currentPage + 1);
+        }
+    });
+    
+    // Initialiser l'affichage des numéros de page
+    updatePageNumbers();
+    
+    // Masquer la pagination si une seule page
+    if (totalPages <= 1) {
+        document.getElementById('activities-pagination').style.display = 'none';
+    }
 });
 </script>
 {% endblock %} 

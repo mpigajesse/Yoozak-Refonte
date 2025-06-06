@@ -25,10 +25,10 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # Redirection de la racine vers la page de connexion
-    path('', lambda request: redirect('accounts:login'), name='root'),
+    # Redirection de la racine vers la page d'accueil de l'application
+    path('', order_management_views.home, name='root'),
     
-    # Page d'accueil principale de l'application
+    # Page d'accueil principale de l'application (peut être gardée pour la compatibilité)
     path('home/', order_management_views.home, name='home'),
     
     # API pour les données du graphique
@@ -47,7 +47,7 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     
     # URLs des applications (vues HTML, etc.)
-    path('', include('accounts.urls')),
+    path('accounts/', include('accounts.urls')),
     path('orders/', include('orders.urls')),
     path('inventory/', include('inventory.urls')),
     path('sync/', include('sync.urls')),
@@ -58,6 +58,8 @@ urlpatterns = [
     
     # Django Browser Reload
     path("__reload__/", include("django_browser_reload.urls")),
+    
+    path('test-operator/', order_management_views.operator_dashboard, name='test_operator_dashboard'),  # Route de test
 ]
 
 # Servir les fichiers média en développement

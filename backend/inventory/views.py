@@ -8,6 +8,14 @@ def is_admin(user):
     """Vérifie si l'utilisateur est un administrateur"""
     return user.is_authenticated and user.is_staff
 
+def is_operator(user):
+    """Vérifie si l'utilisateur est un opérateur actif"""
+    return user.is_authenticated and hasattr(user, 'operator_profile') and user.operator_profile.is_active
+
+def is_admin_or_operator(user):
+    """Vérifie si l'utilisateur est un admin ou un opérateur"""
+    return is_admin(user) or is_operator(user)
+
 class StockForm(forms.ModelForm):
     class Meta:
         model = Stock
@@ -28,13 +36,17 @@ class StockForm(forms.ModelForm):
         return photo
 
 @login_required
-@user_passes_test(is_admin)
+@user_passes_test(is_admin_or_operator)
 def stock_list(request):
-    """Liste des articles en stock pour l'administrateur"""
+    """Liste des articles en stock - accessible aux admins et opérateurs"""
     stocks = Stock.objects.all().order_by('article_code')
+    
+    # Déterminer si l'utilisateur peut modifier (seulement les admins)
+    can_edit = is_admin(request.user)
     
     context = {
         'stocks': stocks,
+        'can_edit': can_edit,
     }
     return render(request, 'inventory/stock_list.html', context)
 

@@ -12,6 +12,7 @@ from accounts.models import Operator
 from inventory.models import Stock
 from django.urls import reverse
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import user_passes_test
 
 def get_activity_period(timestamp):
     """Détermine la période d'une activité"""
@@ -71,7 +72,7 @@ def get_recent_activities():
             'type': 'inventory',
             'description': f"Stock mis à jour",
             'reference': f"{stock.article_name}",
-            'url': reverse('inventory:stock_edit', kwargs={'stock_id': stock.id}),
+            'url': reverse('inventory:stock_list'),
             'timestamp': stock.last_updated,
             'quantity': stock.quantity_available,
             'article_code': stock.article_code,
@@ -140,9 +141,43 @@ def activities_ajax(request):
         'total_activities': paginator.count
     })
 
-@login_required
 def home(request):
-    """Vue de la page d'accueil"""
+    """Vue de la page d'accueil qui redirige vers le bon tableau de bord"""
+    # Vérifier si l'utilisateur est connecté
+    if not request.user.is_authenticated:
+        print("DEBUG: User not authenticated, redirecting to login")
+        return redirect('accounts:login')
+        
+    print(f"DEBUG: User {request.user.username}, is_staff: {request.user.is_staff}")
+    
+    # Vérifier si l'utilisateur est un admin ou un opérateur
+    if request.user.is_staff:
+        print("DEBUG: User is staff, redirecting to admin dashboard")
+        # Admin : afficher le tableau de bord admin
+        return admin_dashboard(request)
+    else:
+        print("DEBUG: User is not staff, checking for operator profile")
+        # Vérifier si l'utilisateur est un opérateur
+        try:
+            operator = request.user.operator_profile
+            print(f"DEBUG: Found operator profile: {operator}, is_active: {operator.is_active}")
+            print("DEBUG: Calling operator_dashboard")
+            result = operator_dashboard(request)
+            print(f"DEBUG: operator_dashboard returned: {type(result)}")
+            return result
+        except Exception as e:
+            print(f"DEBUG: Exception when accessing operator profile: {e}")
+            print(f"DEBUG: Exception type: {type(e)}")
+            # L'utilisateur n'est ni admin ni opérateur
+            # Déconnecter l'utilisateur et rediriger vers login avec message
+            logout(request)
+            messages.error(request, "Votre compte n'est pas associé à un profil opérateur. Contactez l'administrateur.")
+            return redirect('accounts:login')
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def admin_dashboard(request):
+    """Tableau de bord pour les administrateurs"""
     today = timezone.now().date()
     yesterday = today - timedelta(days=1)
     
@@ -256,6 +291,91 @@ def home(request):
     }
     
     return render(request, 'order_management/home.html', context)
+
+def operator_dashboard(request):
+    """Tableau de bord moderne pour les opérateurs"""
+    print("DEBUG: Inside operator_dashboard function")
+    
+    # Cette fonction ne devrait pas être appelée directement
+    # Elle est maintenant intégrée dans la logique de home()
+    operator = request.user.operator_profile  # On sait que ça existe si on arrive ici
+    
+    today = timezone.now().date()
+    
+    # Récupérer les commandes de l'opérateur
+    operator_orders = Order.objects.filter(operator=operator)
+    
+    # Commandes en attente (non confirmées)
+    pending_orders = operator_orders.exclude(status__in=['confirmee', 'annulee'])
+    pending_orders_count = pending_orders.count()
+    
+    # Commandes traitées aujourd'hui
+    today_processed = operator_orders.filter(
+        status__in=['confirmee', 'annulee'],
+        updated_at__date=today
+    )
+    today_processed_count = today_processed.count()
+    
+    # Taux de confirmation de l'opérateur
+    total_operator_orders = operator_orders.count()
+    confirmed_operator_orders = operator_orders.filter(status='confirmee').count()
+    confirmation_rate = 0
+    if total_operator_orders > 0:
+        confirmation_rate = (confirmed_operator_orders / total_operator_orders) * 100
+    
+    # Objectif quotidien pour l'opérateur
+    daily_target = 20  # À ajuster selon les besoins
+    daily_progress = min((today_processed_count / daily_target) * 100, 100) if daily_target > 0 else 0
+    
+    # Statistiques de la semaine
+    start_of_week = today - timedelta(days=today.weekday())
+    week_processed = operator_orders.filter(
+        status__in=['confirmee', 'annulee'],
+        updated_at__date__gte=start_of_week
+    ).count()
+    
+    # Commandes récentes pour traitement (limité à 10)
+    recent_orders = pending_orders.order_by('creation_date')[:10]
+    
+    # Activités récentes de l'opérateur
+    recent_activities = []
+    
+    # Dernières commandes traitées par l'opérateur
+    recent_processed = operator_orders.filter(
+        status__in=['confirmee', 'annulee']
+    ).order_by('-updated_at')[:5]
+    
+    for order in recent_processed:
+        status_text = 'confirmée' if order.status == 'confirmee' else 'annulée'
+        recent_activities.append({
+            'type': 'order',
+            'description': f"Commande {status_text}",
+            'reference': order.order_number,
+            'client': order.client_name,
+            'timestamp': order.updated_at,
+            'status': order.status
+        })
+    
+    context = {
+        'operator': operator,
+        'pending_orders_count': pending_orders_count,
+        'today_processed_count': today_processed_count,
+        'confirmation_rate': round(confirmation_rate, 1),
+        'daily_target': daily_target,
+        'daily_progress': round(daily_progress, 1),
+        'week_processed': week_processed,
+        'recent_orders': recent_orders,
+        'recent_activities': recent_activities,
+        'total_operator_orders': total_operator_orders,
+        'confirmed_operator_orders': confirmed_operator_orders,
+        'current_date': timezone.now(),
+        'active_page': 'home'
+    }
+    
+    print(f"DEBUG: operator_dashboard context prepared, rendering template")
+    result = render(request, 'accounts/operator_dashboard.html', context)
+    print(f"DEBUG: Template rendered successfully")
+    return result
 
 @login_required
 def chart_data(request):
