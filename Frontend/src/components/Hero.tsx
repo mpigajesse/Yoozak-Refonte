@@ -56,19 +56,21 @@ const Hero: React.FC = () => {
             <button className="w-full sm:w-auto px-8 py-3 bg-white text-black font-medium rounded-full hover:bg-opacity-90 transition-all transform hover:scale-105 text-base sm:text-lg">
               Acheter notre Collection 
             </button>
-            <button className="w-full sm:w-auto px-8 py-3 bg-transparent border-2 border-white text-white font-medium rounded-full hover:bg-white/10 transition-all transform hover:scale-105 text-base sm:text-lg">
+            <button 
+              onClick={() => {
+                document.getElementById('discover-more')?.scrollIntoView({ 
+                  behavior: 'smooth' 
+                });
+              }}
+              className="w-full sm:w-auto px-8 py-3 bg-transparent border-2 border-white text-white font-medium rounded-full hover:bg-white/10 transition-all transform hover:scale-105 text-base sm:text-lg"
+            >
               Découvrir plus
             </button>
           </div>
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce hidden sm:block">
-        <div className="w-8 h-12 rounded-full border-2 border-white/50 flex items-start justify-center p-2">
-          <div className="w-1 h-3 bg-white/50 rounded-full animate-scroll"></div>
-        </div>
-      </div>
+
     </div>
   );
 };

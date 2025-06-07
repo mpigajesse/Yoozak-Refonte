@@ -46,14 +46,18 @@ const Footer: React.FC = () => {
             </p>
             <div className="flex space-x-4">
               <a 
-                href="#" 
+                href="https://web.facebook.com/yoozakelegant" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-300"
                 aria-label="Facebook"
               >
                 <Facebook size={20} />
               </a>
               <a 
-                href="#" 
+                href="https://www.instagram.com/yoozak_officiel/" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-300"
                 aria-label="Instagram"
               >
@@ -67,7 +71,9 @@ const Footer: React.FC = () => {
                 <FaTiktok size={20} />
               </a>
               <a 
-                href="#" 
+                href="https://wa.me/212634215639" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-300"
                 aria-label="WhatsApp"
               >
@@ -91,6 +97,7 @@ const Footer: React.FC = () => {
                 { text: "Accueil", href: "/" },
                 { text: "Produits", href: "/products" },
                 { text: "À propos", href: "/about" },
+                { text: "Blog", href: "/blog" },
                 { text: "Contact", href: "/contact" }
               ].map((link, index) => (
                 <li key={index}>
@@ -116,7 +123,7 @@ const Footer: React.FC = () => {
             <h4 className="text-lg font-semibold mb-6">Mon Compte</h4>
             <ul className="space-y-3">
               {[
-                { text: "Mon compte", href: "/auth" },
+                { text: "Mon compte", href: "/account" },
                 { text: "Mon panier", href: "/cart" },
                 { text: "Mes commandes", href: "/orders" },
                 { text: "Mes favoris", href: "/wishlist" }
@@ -154,11 +161,11 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="tel:+212 06 34 21 39 39"
+                  href="tel:+212634215639"
                   className="flex items-center text-gray-400 hover:text-white transition-colors duration-200 group"
                 >
                   <Phone size={20} className="mr-3 text-gray-500 group-hover:text-white transition-colors duration-200" />
-                  <span>+212 634-21-39-39</span>
+                  <span>+212 634-21-56-39</span>
                 </a>
               </li>
               <li>
