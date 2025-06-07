@@ -4,6 +4,177 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ---- TENDANCE DES COMMANDES (GRAPHIQUE PRINCIPAL) ----
+    let ordersChart; // Rendre la variable accessible
+    try {
+        const ordersChartCtx = document.getElementById('ordersChart').getContext('2d');
+        const initialLabels = JSON.parse('{{ chart_labels_json|safe|escapejs }}');
+        const initialData = JSON.parse('{{ chart_data_json|safe|escapejs }}');
+
+        ordersChart = new Chart(ordersChartCtx, {
+            type: 'line',
+            data: {
+                labels: initialLabels,
+                datasets: [{
+                    label: 'Commandes',
+                    data: initialData,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' }, ticks: { precision: 0 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Tendance des commandes:", e);
+    }
+
+    // Fonction pour mettre à jour le graphique de tendance
+    window.updateChart = function(period) {
+        fetch(`/api/chart-data/?period=${period}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('La réponse du réseau n\'était pas correcte');
+                }
+                return response.json();
+            })
+            .then(data => {
+                ordersChart.data.labels = data.labels;
+                ordersChart.data.datasets[0].data = data.values;
+                ordersChart.update();
+            })
+            .catch(error => {
+                console.error('Erreur lors de la mise à jour du graphique:', error);
+            });
+    }
+
+    // Gestion des clics sur les boutons de période
+    const periodButtons = document.querySelectorAll('.chart-period-btn');
+    periodButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Mettre à jour le style des boutons
+            periodButtons.forEach(btn => {
+                btn.classList.remove('bg-white', 'shadow-sm');
+            });
+            this.classList.add('bg-white', 'shadow-sm');
+            
+            // Mettre à jour le graphique
+            const period = this.getAttribute('data-period');
+            updateChart(period);
+        });
+    });
+
+    // ---- 3 GRAPHIQUES STATISTIQUES (JOUR/SEMAINE/MOIS) ----
+    
+    // 1. Nombre de commandes
+    try {
+        const ordersCountCtx = document.getElementById('ordersCountChart').getContext('2d');
+        const ordersByDay = JSON.parse('{{ orders_by_day_json|safe|escapejs }}');
+        const ordersCountLabels = ordersByDay.map(item => item.date);
+        const ordersCountData = ordersByDay.map(item => item.count);
+
+        new Chart(ordersCountCtx, {
+            type: 'bar',
+            data: {
+                labels: ordersCountLabels,
+                datasets: [{
+                    label: 'Nombre de commandes',
+                    data: ordersCountData,
+                    backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                    borderColor: 'rgb(13, 110, 253)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Nombre de commandes' } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Nombre de commandes:", e);
+    }
+    
+    // 2. Valeur des commandes
+    try {
+        const ordersValueCtx = document.getElementById('ordersValueChart').getContext('2d');
+        const ordersByDay = JSON.parse('{{ orders_by_day_json|safe|escapejs }}');
+        const ordersValueLabels = ordersByDay.map(item => item.date);
+        const ordersValueData = ordersByDay.map(item => item.value);
+
+        new Chart(ordersValueCtx, {
+            type: 'bar',
+            data: {
+                labels: ordersValueLabels,
+                datasets: [{
+                    label: 'Valeur des commandes',
+                    data: ordersValueData,
+                    backgroundColor: 'rgba(255, 193, 7, 0.5)',
+                    borderColor: 'rgb(255, 193, 7)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Valeur (DH)' } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Valeur des commandes:", e);
+    }
+    
+    // 3. Nombre d'articles
+    try {
+        const articlesCountCtx = document.getElementById('articlesCountChart').getContext('2d');
+        const articlesByDay = JSON.parse('{{ articles_by_day_json|safe|escapejs }}');
+        const articlesLabels = articlesByDay.map(item => item.date);
+        const articlesCountData = articlesByDay.map(item => item.total_articles);
+
+        new Chart(articlesCountCtx, {
+            type: 'bar',
+            data: {
+                labels: articlesLabels,
+                datasets: [{
+                    label: "Nombre d'articles",
+                    data: articlesCountData,
+                    backgroundColor: 'rgba(25, 135, 84, 0.5)',
+                    borderColor: 'rgb(25, 135, 84)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: "Nombre d'articles" } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Nombre d'articles:", e);
+    }
+});
+</script>
 {% endblock %}
 
 {% block content %}
@@ -14,7 +185,72 @@
         <p class="text-gray-600 mt-2">{{ current_date|date:"l d F Y" }} - Aperçu de vos activités</p>
     </div>
 
-    <!-- Grille de statistiques avec animations -->
+    <!-- Première ligne de statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Taux de confirmation -->
+        <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Taux de confirmation</p>
+                    <p class="text-3xl font-bold text-blue-600">{{ confirmation_rate|floatformat:1 }}%</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Articles commandés -->
+        <div class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-green-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Articles commandés</p>
+                    <p class="text-3xl font-bold text-green-600">{{ total_articles }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valeur totale -->
+        <div class="bg-gradient-to-br from-cyan-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-cyan-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Valeur totale</p>
+                    <p class="text-3xl font-bold text-cyan-600">{{ total_value|floatformat:2 }}</p>
+                    <p class="text-xs text-gray-500">DH</p>
+                </div>
+                <div class="bg-cyan-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valeur confirmée -->
+        <div class="bg-gradient-to-br from-yellow-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-yellow-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Valeur confirmée</p>
+                    <p class="text-3xl font-bold text-yellow-600">{{ confirmed_value|floatformat:2 }}</p>
+                    <p class="text-xs text-gray-500">DH</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deuxième ligne de statistiques -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Carte : Commandes en attente -->
         <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-100">
@@ -122,9 +358,9 @@
         <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold text-gray-800">Tendance des commandes</h2>
-                <div class="flex space-x-2">
-                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" onclick="updateChart('week')">Semaine</button>
-                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" onclick="updateChart('month')">Mois</button>
+                <div id="chart-period-buttons" class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                    <button data-period="week" class="chart-period-btn px-3 py-1 text-sm rounded-md text-gray-600 font-medium bg-white shadow-sm">Semaine</button>
+                    <button data-period="month" class="chart-period-btn px-3 py-1 text-sm rounded-md text-gray-600 font-medium">Mois</button>
                 </div>
             </div>
             <div class="relative h-[400px]">
@@ -180,6 +416,143 @@
         </div>
     </div>
 
+    <!-- Section statistiques détaillées -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Statut des commandes -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Statut des commandes</h2>
+            <div class="space-y-4">
+                {% for status in orders_by_status %}
+                <div class="flex items-center justify-between p-4 rounded-lg 
+                    {% if status.status == 'affectee' %}bg-blue-50 border border-blue-200{% endif %}
+                    {% if status.status == 'doublon' %}bg-gray-50 border border-gray-200{% endif %}
+                    {% if status.status == 'non_affectee' %}bg-yellow-50 border border-yellow-200{% endif %}">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full mr-3
+                            {% if status.status == 'affectee' %}bg-blue-500{% endif %}
+                            {% if status.status == 'doublon' %}bg-gray-500{% endif %}
+                            {% if status.status == 'non_affectee' %}bg-yellow-500{% endif %}">
+                        </div>
+                        <span class="font-medium text-gray-700">{{ status.label }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-2xl font-bold
+                            {% if status.status == 'affectee' %}text-blue-600{% endif %}
+                            {% if status.status == 'doublon' %}text-gray-600{% endif %}
+                            {% if status.status == 'non_affectee' %}text-yellow-600{% endif %}">
+                            {{ status.count }}
+                        </span>
+                        <span class="ml-2 px-2 py-1 text-xs font-medium rounded-full
+                            {% if status.status == 'affectee' %}bg-blue-100 text-blue-700{% endif %}
+                            {% if status.status == 'doublon' %}bg-gray-100 text-gray-700{% endif %}
+                            {% if status.status == 'non_affectee' %}bg-yellow-100 text-yellow-700{% endif %}">
+                            {{ status.count }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Performance des opérateurs -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Performance des opérateurs</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-sm font-medium text-gray-500 border-b">
+                            <th class="pb-3">Opérateur</th>
+                            <th class="pb-3 text-center">Confirmées</th>
+                            <th class="pb-3 text-center">Total</th>
+                            <th class="pb-3 text-center">Taux</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        {% for operator in operators_stats %}
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="py-3">
+                                <div class="font-medium text-gray-900">{{ operator.username }}</div>
+                            </td>
+                            <td class="py-3 text-center">
+                                <span class="font-medium text-green-600">{{ operator.confirmed_orders }}</span>
+                            </td>
+                            <td class="py-3 text-center">
+                                <span class="font-medium text-gray-900">{{ operator.total_orders }}</span>
+                            </td>
+                            <td class="py-3 text-center">
+                                <div class="flex items-center justify-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="h-2 rounded-full 
+                                            {% if operator.confirmation_rate >= 80 %}bg-green-500{% elif operator.confirmation_rate >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}" 
+                                            style="width: {{ operator.confirmation_rate }}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-medium
+                                        {% if operator.confirmation_rate >= 80 %}text-green-600{% elif operator.confirmation_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                        {{ operator.confirmation_rate }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="py-6 text-center text-gray-500">Aucun opérateur actif</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section graphiques statistiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Graphique nombre de commandes -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Nombre de commandes</h3>
+                <select class="text-xs border border-gray-300 rounded px-2 py-1" id="ordersCountChartPeriod">
+                    <option value="daily">Journalier</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="monthly">Mensuel</option>
+                </select>
+            </div>
+            <div class="relative" style="height: 300px;">
+                <canvas id="ordersCountChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graphique valeur des commandes -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Valeur des commandes</h3>
+                <select class="text-xs border border-gray-300 rounded px-2 py-1" id="ordersValueChartPeriod">
+                    <option value="daily">Journalier</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="monthly">Mensuel</option>
+                </select>
+            </div>
+            <div class="relative" style="height: 300px;">
+                <canvas id="ordersValueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graphique nombre d'articles -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Nombre d'articles</h3>
+                <select class="text-xs border border-gray-300 rounded px-2 py-1" id="articlesChartPeriod">
+                    <option value="daily">Journalier</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="monthly">Mensuel</option>
+                </select>
+            </div>
+            <div class="relative" style="height: 300px;">
+                <canvas id="articlesCountChart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <!-- Dernières activités -->
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -230,91 +603,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<!-- Script pour le graphique -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('ordersChart').getContext('2d');
-    const ordersChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: JSON.parse('{{ chart_labels|safe|escapejs }}'),
-            datasets: [{
-                label: 'Commandes',
-                data: JSON.parse('{{ chart_data|safe|escapejs }}'),
-                borderColor: '#2563eb',
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    titleColor: '#1f2937',
-                    bodyColor: '#1f2937',
-                    borderColor: '#e5e7eb',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false,
-                    callbacks: {
-                        title: function(tooltipItems) {
-                            return 'Date: ' + tooltipItems[0].label;
-                        },
-                        label: function(context) {
-                            return 'Commandes: ' + context.parsed.y;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        display: true,
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    ticks: {
-                        precision: 0
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            }
-        }
-    });
-
-    // Fonction pour mettre à jour le graphique
-    window.updateChart = function(period) {
-        fetch(`/api/orders/chart-data/?period=${period}`)
-            .then(response => response.json())
-            .then(data => {
-                ordersChart.data.labels = data.labels;
-                ordersChart.data.datasets[0].data = data.values;
-                ordersChart.update();
-            })
-            .catch(error => {
-                console.error('Erreur lors de la mise à jour du graphique:', error);
-            });
-    };
-});
-</script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;

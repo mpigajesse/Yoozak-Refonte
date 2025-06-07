@@ -9,6 +9,9 @@ from datetime import timedelta
 import json
 from orders.models import Order
 from accounts.models import Operator
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
+import json
 from inventory.models import Stock
 from django.urls import reverse
 from django.core.paginator import Paginator
@@ -230,34 +233,142 @@ def admin_dashboard(request):
     # Statistiques supplémentaires
     total_orders = Order.objects.count()
     confirmed_orders = Order.objects.filter(status='confirmee').count()
-    total_value = Order.objects.aggregate(total=Sum('price'))['total'] or 0
+    assigned_orders = Order.objects.filter(status='affectee').count()
+    duplicate_orders = Order.objects.filter(status='doublon').count()
+    unassigned_orders = Order.objects.filter(status='non_affectee').count()
+    error_orders = Order.objects.filter(status__in=['erronnee', 'doublon']).count()
+    
+    # Calcul du nombre total d'articles commandés
+    total_articles = Order.objects.exclude(status__in=['erronnee', 'doublon']).aggregate(
+        total=Sum('articles__quantity')
+    )['total'] or 0
+    
+    # Si pas d'articles via relations, utiliser la quantité directe
+    if total_articles == 0:
+        total_articles = Order.objects.exclude(status__in=['erronnee', 'doublon']).aggregate(
+            total=Sum('quantity')
+        )['total'] or 0
+    
+    # Calcul des valeurs des commandes
+    total_value = Order.objects.exclude(status__in=['erronnee', 'doublon']).aggregate(
+        total=Sum('price')
+    )['total'] or 0
+    
+    confirmed_value = Order.objects.filter(status='confirmee').aggregate(
+        total=Sum('price')
+    )['total'] or 0
     
     # Calcul du taux de confirmation
     confirmation_rate = 0
     confirmation_rate_change = 0
-    if total_orders > 0:
-        confirmation_rate = (confirmed_orders / total_orders) * 100
+    total_processable_orders = Order.objects.exclude(status__in=['erronnee', 'doublon']).count()
+    if total_processable_orders > 0:
+        confirmation_rate = (confirmed_orders / total_processable_orders) * 100
         # Calcul du changement du taux de confirmation
-        yesterday_orders = Order.objects.filter(creation_date__date=yesterday)
+        yesterday_orders = Order.objects.filter(creation_date__date=yesterday).exclude(status__in=['erronnee', 'doublon'])
         yesterday_total = yesterday_orders.count()
         yesterday_confirmed = yesterday_orders.filter(status='confirmee').count()
         if yesterday_total > 0:
             yesterday_rate = (yesterday_confirmed / yesterday_total) * 100
             confirmation_rate_change = confirmation_rate - yesterday_rate
     
-    # Données pour le graphique
-    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
-    chart_data = []
-    chart_labels = []
+    # Statistiques des opérateurs
+    operators_stats = []
+    operators = Operator.objects.filter(is_active=True)
     
-    for date in last_7_days:
-        count = Order.objects.filter(creation_date__date=date).count()
-        chart_data.append(count)
-        chart_labels.append(date.strftime("%d/%m"))
+    for operator in operators:
+        total_operator_orders = Order.objects.filter(
+            operator=operator
+        ).exclude(
+            status__in=['erronnee', 'doublon']
+        ).count()
+        
+        confirmed_operator_orders = Order.objects.filter(
+            operator=operator,
+            status='confirmee'
+        ).count()
+        
+        operator_confirmation_rate = 0
+        if total_operator_orders > 0:
+            operator_confirmation_rate = (confirmed_operator_orders / total_operator_orders) * 100
+        
+        operators_stats.append({
+            'username': operator.user.username,
+            'total_orders': total_operator_orders,
+            'confirmed_orders': confirmed_operator_orders,
+            'confirmation_rate': round(operator_confirmation_rate, 2)
+        })
+    
+    # Statistiques temporelles pour les graphiques
+    orders_by_day_raw = Order.objects.exclude(status__in=['erronnee', 'doublon']).annotate(
+        date=TruncDate('creation_date')
+    ).values('date').annotate(
+        count=Count('yoozak_id'),
+        value=Sum('price')
+    ).order_by('-date')[:7]  # 7 derniers jours
+
+    # Convertir en format JSON serializable
+    orders_by_day = []
+    for item in orders_by_day_raw:
+        orders_by_day.append({
+            'date': item['date'].strftime('%d/%m/%Y') if item['date'] else None,
+            'count': int(item['count'] or 0),
+            'value': float(item['value'] or 0)
+        })
+
+    # Si pas de données, ajouter des données par défaut pour les 7 derniers jours
+    if not orders_by_day:
+        for i in range(6, -1, -1):
+            date = (timezone.now() - timedelta(days=i)).date()
+            orders_by_day.append({
+                'date': date.strftime('%d/%m/%Y'),
+                'count': 0,
+                'value': 0.0
+            })
+
+    # Statistiques temporelles des articles commandés
+    articles_by_day = []
+    for date_stat in orders_by_day:
+        date_str = date_stat['date']
+        if date_str:
+            from datetime import datetime
+            date = datetime.strptime(date_str, '%d/%m/%Y').date()
+            
+            articles_count = Order.objects.filter(
+                creation_date__date=date
+            ).exclude(status__in=['erronnee', 'doublon']).aggregate(
+                total=Sum('quantity')
+            )['total'] or 0
+            
+            articles_by_day.append({
+                'date': date_str,
+                'total_articles': articles_count
+            })
+
+    # Commandes par statut pour le graphique
+    orders_by_status = []
+    status_choices = [
+        ('affectee', 'Affectées'),
+        ('doublon', 'Doublons'), 
+        ('non_affectee', 'Non affectées'),
+        ('annulee', 'Annulées')
+    ]
+    
+    for status_code, status_label in status_choices:
+        count = Order.objects.filter(status=status_code).count()
+        orders_by_status.append({
+            'status': status_code,
+            'label': status_label,
+            'count': count
+        })
+    
+    # Données pour le graphique de tendance (7 derniers jours par défaut)
+    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    chart_labels = [date.strftime("%d/%m") for date in last_7_days]
+    chart_data = [Order.objects.filter(creation_date__date=date).count() for date in last_7_days]
     
     # Conversion en JSON pour le template
     chart_data_json = json.dumps(chart_data)
-    chart_labels_json = json.dumps(chart_labels)
     
     # Récupérer les activités récentes (première page)
     all_activities = get_recent_activities()
@@ -304,11 +415,21 @@ def admin_dashboard(request):
         'active_operator_list': operators_with_photos,
         'total_orders': total_orders,
         'confirmed_orders': confirmed_orders,
+        'assigned_orders': assigned_orders,
+        'duplicate_orders': duplicate_orders,
+        'unassigned_orders': unassigned_orders,
+        'error_orders': error_orders,
+        'total_articles': total_articles,
         'total_value': total_value,
+        'confirmed_value': confirmed_value,
         'confirmation_rate': confirmation_rate,
         'confirmation_rate_change': confirmation_rate_change,
-        'chart_data': chart_data_json,
-        'chart_labels': chart_labels_json,
+        'operators_stats': operators_stats,
+        'orders_by_status': orders_by_status,
+        'orders_by_day_json': json.dumps(orders_by_day),
+        'articles_by_day_json': json.dumps(articles_by_day),
+        'chart_data_json': chart_data_json,
+        'chart_labels_json': json.dumps(chart_labels),
         'grouped_activities': first_page_grouped,
         'activities_paginator': paginator,
         'current_date': timezone.now(),
