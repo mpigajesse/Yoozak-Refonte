@@ -307,14 +307,7 @@ const AccountPage: React.FC = () => {
                   <Map size={18} className="mr-3" />
                   <span>Mes adresses</span>
                 </button>
-                
-                <Link 
-                  href="#"
-                  className="w-full flex items-center p-3 rounded-lg transition-colors hover:bg-gray-100"
-                >
-                  <CreditCard size={18} className="mr-3" />
-                  <span>Moyens de paiement</span>
-                </Link>
+     
                 
                 <Link 
                   href="#"
@@ -371,7 +364,7 @@ const AccountPage: React.FC = () => {
                             </p>
                           </div>
                           <div className="mt-2 sm:mt-0">
-                            <p className="font-semibold">{order.totalAmount.toFixed(2)} MAD</p>
+                            <p className="font-semibold">{order.totalAmount.toFixed(2)} DHS</p>
                             <Link 
                               href={`/orders/${order.id}`}
                               className="text-sm text-black hover:underline"
@@ -405,7 +398,7 @@ const AccountPage: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                   <p className="font-medium">
-                                    {(item.price * item.quantity).toFixed(2)} MAD
+                                    {(item.price * item.quantity).toFixed(2)} DHS
                                   </p>
                                   <Link 
                                     href={`/products/${item.id}`}
@@ -471,7 +464,7 @@ const AccountPage: React.FC = () => {
                           </Link>
                           
                           <div className="flex justify-between items-center mb-3">
-                            <span className="font-bold">{item.price.toFixed(2)} MAD</span>
+                            <span className="font-bold">{item.price.toFixed(2)} DHS</span>
                             <span className={item.inStock ? 'text-green-600 text-sm' : 'text-red-600 text-sm'}>
                               {item.inStock ? 'En stock' : 'Rupture de stock'}
                             </span>

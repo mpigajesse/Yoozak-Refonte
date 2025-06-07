@@ -15,6 +15,8 @@ import TermsOfUsePage from './pages/TermsOfUsePage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
 import BlogPage from './pages/BlogPage';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import Footer from './components/Footer';
 import CartSidebar from './components/CartSidebar';
 import { CartProvider } from './context/CartContext';
@@ -29,8 +31,8 @@ function AppContent() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <ScrollingBanner
-        text="Un coupon de 30% pour le prochain achat pour les commandes de plus de 1000 MAD. Ne manquez pas cette offre."
-        backgroundColor="#062c4e"
+        text="offre Spéciale : Livraison Gratuite et paiement à la livraison"
+        backgroundColor="#8a553b"
         textColor="#ffffff"
         speed={90}
       />
@@ -157,6 +159,26 @@ function AppContent() {
                 transition={{ duration: 0.3 }}
               >
                 <CartPage />
+              </motion.div>
+            } />
+            <Route path="/checkout" element={
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CheckoutPage />
+              </motion.div>
+            } />
+            <Route path="/order-confirmation" element={
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <OrderConfirmationPage />
               </motion.div>
             } />
 

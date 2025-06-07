@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Facebook, Instagram, Twitter, Youtube, Mail, MapPin, Phone } from 'lucide-react';
+import { ArrowRight, Facebook, Instagram, Mail, MapPin, Phone } from 'lucide-react';
+import { FaTiktok, FaWhatsapp, FaTelegram } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
   return (
@@ -61,16 +62,23 @@ const Footer: React.FC = () => {
               <a 
                 href="#" 
                 className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-300"
-                aria-label="Twitter"
+                aria-label="TikTok"
               >
-                <Twitter size={20} />
+                <FaTiktok size={20} />
               </a>
               <a 
                 href="#" 
                 className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-300"
-                aria-label="Youtube"
+                aria-label="WhatsApp"
               >
-                <Youtube size={20} />
+                <FaWhatsapp size={20} />
+              </a>
+              <a 
+                href="#" 
+                className="rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-300"
+                aria-label="Telegram"
+              >
+                <FaTelegram size={20} />
               </a>
             </div>
           </div>
@@ -137,20 +145,20 @@ const Footer: React.FC = () => {
             <ul className="space-y-4">
               <li>
                 <a 
-                  href="mailto:contact@yoozak.com"
+                  href="mailto:yz.prestation@gmail.com"
                   className="flex items-center text-gray-400 hover:text-white transition-colors duration-200 group"
                 >
                   <Mail size={20} className="mr-3 text-gray-500 group-hover:text-white transition-colors duration-200" />
-                  <span>contact@yoozak.com</span>
+                  <span>yz.prestation@gmail.com</span>
                 </a>
               </li>
               <li>
                 <a 
-                  href="tel:+212500000000"
+                  href="tel:+212 06 34 21 39 39"
                   className="flex items-center text-gray-400 hover:text-white transition-colors duration-200 group"
                 >
                   <Phone size={20} className="mr-3 text-gray-500 group-hover:text-white transition-colors duration-200" />
-                  <span>+212 5 00 00 00 00</span>
+                  <span>+212 634-21-39-39</span>
                 </a>
               </li>
               <li>
@@ -159,7 +167,7 @@ const Footer: React.FC = () => {
                   className="flex items-center text-gray-400 hover:text-white transition-colors duration-200 group"
                 >
                   <MapPin size={20} className="mr-3 text-gray-500 group-hover:text-white transition-colors duration-200" />
-                  <span>123 Rue du Commerce,<br />Casablanca, Maroc</span>
+                  <span>Settat, Maroc</span>
                 </a>
               </li>
             </ul>
@@ -186,8 +194,8 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/shipping" className="hover:text-white transition-colors duration-200">
-                  Livraison
+                <Link to="/refund-policy" className="hover:text-white transition-colors duration-200">
+                  Politique de remboursement
                 </Link>
               </li>
             </ul>

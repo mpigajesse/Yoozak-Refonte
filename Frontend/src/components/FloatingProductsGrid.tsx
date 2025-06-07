@@ -157,15 +157,15 @@ const FloatingProductsGrid: React.FC<FloatingProductsGridProps> = ({ products })
                     {product.isSale ? (
                       <div className="flex flex-col items-end">
                         <span className="text-lg sm:text-xl font-medium text-red-500">
-                          ${(product.price * (1 - product.discount! / 100)).toFixed(2)}
+                          {(product.price * (1 - product.discount! / 100)).toFixed(2)} dhs
                         </span>
                         <span className="text-sm text-gray-500 line-through">
-                          ${product.price.toFixed(2)}
+                         {product.price.toFixed(2)}  dhs
                         </span>
                       </div>
                     ) : (
                       <span className="text-lg sm:text-xl font-medium text-gray-900">
-                        ${product.price.toFixed(2)}
+                        {product.price.toFixed(2)}  dhs
                       </span>
                     )}
                   </div>
@@ -175,24 +175,7 @@ const FloatingProductsGrid: React.FC<FloatingProductsGridProps> = ({ products })
                   {product.description}
                 </p>
                 
-                {/* Stock info */}
-                {product.stock !== undefined && (
-                  <div className="mb-4">
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full transition-all duration-300 ${
-                          product.stock > 5 ? 'bg-green-500' : 'bg-orange-500'
-                        }`}
-                        style={{ width: `${Math.min(100, (product.stock / 10) * 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {product.stock > 5 
-                        ? 'En stock' 
-                        : `Plus que ${product.stock} en stock`}
-                    </p>
-                  </div>
-                )}
+       
                 
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                   <Link 

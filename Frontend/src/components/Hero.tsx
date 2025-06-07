@@ -29,7 +29,7 @@ const Hero: React.FC = () => {
         ref={parallaxRef}
         className="absolute inset-0 z-0"
         style={{
-          backgroundImage: 'url(https://images.pexels.com/photos/1456706/pexels-photo-1456706.jpeg?auto=compress&cs=tinysrgb&w=1600)',
+          backgroundImage: 'url(/assets/images/Photo_background.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           height: '120%',
@@ -47,17 +47,17 @@ const Hero: React.FC = () => {
       >
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 tracking-tight">
-            Elegance in Every Step
+            Quand Marcher Devient un plaisir 
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-8 leading-relaxed">
-            Discover our collection of handcrafted luxury loafers
+            Découvrez notre collection de chaussures de qualité
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button className="w-full sm:w-auto px-8 py-3 bg-white text-black font-medium rounded-full hover:bg-opacity-90 transition-all transform hover:scale-105 text-base sm:text-lg">
-              Shop Collection
+              Acheter notre Collection 
             </button>
             <button className="w-full sm:w-auto px-8 py-3 bg-transparent border-2 border-white text-white font-medium rounded-full hover:bg-white/10 transition-all transform hover:scale-105 text-base sm:text-lg">
-              Discover More
+              Découvrir plus
             </button>
           </div>
         </div>

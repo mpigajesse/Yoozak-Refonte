@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { X, Trash2, Plus, Minus, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
@@ -11,16 +11,43 @@ const CartSidebar: React.FC = () => {
     cartItems, 
     removeFromCart, 
     updateQuantity,
-    totalPrice 
+    totalPrice,
+    totalItems
   } = useCart();
 
-  // Calcul des informations supplémentaires
-  const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-  const freeShippingThreshold = 1000;
-  const remainingForFreeShipping = Math.max(0, freeShippingThreshold - totalPrice);
-  const estimatedShipping = totalPrice >= freeShippingThreshold ? 0 : 50;
+  // Calcul des totaux
+  const shippingCost = 50;
   const subtotal = totalPrice;
-  const total = subtotal + estimatedShipping;
+  const total = subtotal + shippingCost;
+
+  // Références pour les animations
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    // Empêcher le défilement du corps lorsque le panier est ouvert
+    if (isCartOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCartOpen]);
+  
+  // Fermer le panier en appuyant sur Echap
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isCartOpen) {
+        closeCart();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isCartOpen, closeCart]);
 
   return (
     <>
@@ -51,27 +78,6 @@ const CartSidebar: React.FC = () => {
             <X size={24} />
           </button>
         </div>
-
-        {/* Progress vers la livraison gratuite */}
-        {remainingForFreeShipping > 0 && (
-          <div className="p-4 bg-gray-50">
-            <div className="mb-2">
-              <div className="flex justify-between text-sm mb-1">
-                <span>Progression vers la livraison gratuite</span>
-                <span>{Math.round((totalPrice / freeShippingThreshold) * 100)}%</span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-black transition-all duration-500 ease-out"
-                  style={{ width: `${Math.min(100, (totalPrice / freeShippingThreshold) * 100)}%` }}
-                />
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">
-              Plus que {remainingForFreeShipping.toFixed(2)} MAD pour la livraison gratuite !
-            </p>
-          </div>
-        )}
 
         {/* Cart Items */}
         <div className="h-[calc(100vh-350px)] overflow-y-auto p-4">
@@ -122,14 +128,14 @@ const CartSidebar: React.FC = () => {
                         {item.product.isSale ? (
                           <span className="flex flex-col items-end">
                             <span className="text-red-500">
-                              ${((item.product.price * (1 - item.product.discount! / 100)) * item.quantity).toFixed(2)}
+                              {((item.product.price * (1 - item.product.discount! / 100)) * item.quantity).toFixed(2)} dhs
                             </span>
                             <span className="text-sm text-gray-500 line-through">
-                              ${(item.product.price * item.quantity).toFixed(2)}
+                              {(item.product.price * item.quantity).toFixed(2)} dhs
                             </span>
                           </span>
                         ) : (
-                          <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+                          <span>{(item.product.price * item.quantity).toFixed(2)} dhs</span>
                         )}
                       </p>
                     </div>
@@ -196,18 +202,20 @@ const CartSidebar: React.FC = () => {
         {cartItems.length > 0 && (
           <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4">
             {/* Résumé */}
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Sous-total</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Livraison estimée</span>
-                <span>{estimatedShipping === 0 ? 'Gratuite' : `$${estimatedShipping.toFixed(2)}`}</span>
-              </div>
-              <div className="border-t border-gray-200 pt-2 flex justify-between font-medium">
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+            <div className="px-6 py-4 bg-gray-50">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Sous-total</span>
+                  <span>{subtotal.toFixed(2)} DHS</span>
+                </div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Frais de livraison</span>
+                  <span>{shippingCost.toFixed(2)} DHS</span>
+                </div>
+                <div className="border-t border-gray-200 pt-2 flex justify-between font-medium">
+                  <span>Total</span>
+                  <span>{total.toFixed(2)} DHS</span>
+                </div>
               </div>
             </div>
 

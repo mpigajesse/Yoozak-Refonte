@@ -81,7 +81,7 @@ const TermsOfUsePage: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">5. Prix et disponibilité</h2>
             <p className="mb-4">
-              Les prix affichés sur le Site sont en Dirhams marocains (MAD) et incluent la TVA, sauf indication contraire. 
+              Les prix affichés sur le Site sont en Dirhams marocains (DHS) et incluent la TVA, sauf indication contraire. 
               Les frais de livraison sont indiqués séparément avant la validation de la commande.
             </p>
             <p className="mb-4">

@@ -7,6 +7,7 @@ import AnimatedFeatures from '../components/AnimatedFeatures';
 import DiscoverMore from '../components/DiscoverMore';
 import FloatingProductsGrid from '../components/FloatingProductsGrid';
 import { mockProducts } from '../data/mockData';
+import PassionShowcase from '../components/PassionShowcase';
 
 const HomePage: React.FC = () => {
   const topProducts = mockProducts.slice(0, 3);
@@ -41,24 +42,10 @@ const HomePage: React.FC = () => {
           />
         </div>
         
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center">
-            <a 
-              href="/products" 
-              className="w-full sm:w-auto px-8 py-3 border-2 border-black text-black font-medium hover:bg-black hover:text-white transition-colors duration-300 text-center sm:min-w-[200px]"
-            >
-              Voir tous les produits
-            </a>
-          </div>
-        </div>
       </section>
       
-      {/* First Parallax Section */}
-      <ParallaxSection 
-        imageUrl="https://images.pexels.com/photos/1456733/pexels-photo-1456733.jpeg?auto=compress&cs=tinysrgb&w=1600"
-        title="Crafted with Passion"
-        subtitle="Each pair of Yoozak loafers is handcrafted by skilled artisans using traditional techniques and the finest Italian leather."
-      />
+      {/* Passion Showcase Section */}
+      <PassionShowcase />
       
       {/* Featured Products Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-white">
@@ -79,7 +66,7 @@ const HomePage: React.FC = () => {
       
       {/* Second Parallax Section */}
       <ParallaxSection 
-        imageUrl="https://images.pexels.com/photos/6540927/pexels-photo-6540927.jpeg?auto=compress&cs=tinysrgb&w=1600"
+        imageUrl="/assets/images/Elegance.png"
         title="Élégance intemporelle"
         subtitle="Nos chaussures allient sophistication classique et confort moderne, créant des chaussures qui résistent à l'épreuve du temps."
         reverse={true}

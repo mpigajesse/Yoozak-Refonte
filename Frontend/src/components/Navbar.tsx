@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X, ShoppingBag, Search, User, ChevronDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { mockProducts, Product } from '../data/mockData';
 import { useCart } from '../context/CartContext';
 
@@ -17,6 +17,99 @@ const Navbar: React.FC = () => {
   const hommeMenuRef = useRef<HTMLDivElement>(null);
   const femmeMenuRef = useRef<HTMLDivElement>(null);
   const { toggleCart, totalItems } = useCart();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Debounce pour la recherche
+  const debounceTimeout = useRef<NodeJS.Timeout>();
+
+  // Synchroniser la recherche avec les paramètres URL de la page produits
+  useEffect(() => {
+    if (location.pathname === '/products') {
+      const urlParams = new URLSearchParams(location.search);
+      const searchParam = urlParams.get('search');
+      if (searchParam && searchParam !== searchQuery) {
+        setSearchQuery(decodeURIComponent(searchParam));
+      }
+    } else if (location.pathname !== '/products' && searchQuery) {
+      // Réinitialiser la recherche si on n'est pas sur la page produits
+      setSearchQuery('');
+      setShowSearchResults(false);
+    }
+  }, [location]);
+
+  // Fonction de recherche améliorée
+  const performAdvancedSearch = useCallback((query: string): Product[] => {
+    if (!query.trim()) return [];
+
+    const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+    
+    return mockProducts.filter(product => {
+      // Recherche dans plusieurs champs avec pondération
+      const nameMatch = searchTerms.some(term => 
+        product.name.toLowerCase().includes(term)
+      );
+      
+      const descriptionMatch = searchTerms.some(term => 
+        product.description.toLowerCase().includes(term)
+      );
+      
+      const typeMatch = searchTerms.some(term => 
+        product.type.toLowerCase().includes(term)
+      );
+      
+      const categoryMatch = searchTerms.some(term => {
+        const categoryLabel = product.category === 'men' ? 'homme' : 
+                             product.category === 'women' ? 'femme' : product.category;
+        return categoryLabel.toLowerCase().includes(term) || 
+               product.category.toLowerCase().includes(term);
+      });
+      
+      const colorMatch = product.color && searchTerms.some(term => 
+        product.color!.toLowerCase().includes(term)
+      );
+
+      // Recherche par prix (si l'utilisateur tape un nombre)
+      const priceMatch = searchTerms.some(term => {
+        const numericTerm = parseFloat(term);
+        if (!isNaN(numericTerm)) {
+          return Math.abs(product.price - numericTerm) <= 50; // Tolérance de 50 DHS
+        }
+        return false;
+      });
+
+      // Au moins un critère doit correspondre
+      return nameMatch || descriptionMatch || typeMatch || categoryMatch || colorMatch || priceMatch;
+    }).sort((a, b) => {
+      // Tri par pertinence : nom exact > nom partiel > description > autres
+      const aNameExact = searchTerms.some(term => a.name.toLowerCase() === term);
+      const bNameExact = searchTerms.some(term => b.name.toLowerCase() === term);
+      
+      if (aNameExact && !bNameExact) return -1;
+      if (!aNameExact && bNameExact) return 1;
+      
+      const aNameMatch = searchTerms.some(term => a.name.toLowerCase().includes(term));
+      const bNameMatch = searchTerms.some(term => b.name.toLowerCase().includes(term));
+      
+      if (aNameMatch && !bNameMatch) return -1;
+      if (!aNameMatch && bNameMatch) return 1;
+      
+      return 0;
+    });
+  }, []);
+
+  // Debounced search pour le dropdown
+  const debouncedSearch = useCallback((query: string) => {
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+    
+    debounceTimeout.current = setTimeout(() => {
+      const results = performAdvancedSearch(query);
+      setSearchResults(results);
+      setShowSearchResults(query.trim().length > 0);
+    }, 300); // 300ms de délai
+  }, [performAdvancedSearch]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,28 +141,56 @@ const Navbar: React.FC = () => {
     };
   }, []);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, []);
+
+  // Gestion de la soumission de recherche - MODIFIÉE pour rediriger
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      const results = mockProducts.filter(product => 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setSearchResults(results);
-      setShowSearchResults(true);
+      // Fermer le dropdown
+      setShowSearchResults(false);
+      
+      // Rediriger vers la page produits avec le paramètre de recherche
+      const searchParams = new URLSearchParams();
+      searchParams.set('search', searchQuery.trim());
+      navigate(`/products?${searchParams.toString()}`);
     }
   };
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    if (e.target.value === '') {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    if (query === '') {
       setShowSearchResults(false);
+      setSearchResults([]);
+    } else {
+      debouncedSearch(query);
     }
   };
 
   const closeSearchResults = () => {
     setShowSearchResults(false);
   };
+
+  // Fonction pour naviguer vers les produits avec des filtres
+  const navigateToProductsWithFilters = useCallback((params: Record<string, string>) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        searchParams.set(key, value);
+      }
+    });
+    navigate(`/products?${searchParams.toString()}`);
+    setIsOpen(false); // Fermer le menu mobile
+  }, [navigate]);
 
   const toggleMobileSubMenu = (category: string) => {
     if (activeMobileSubMenu === category) {
@@ -128,12 +249,25 @@ const Navbar: React.FC = () => {
                 className={`absolute left-0 mt-2 w-56 bg-white/95 backdrop-blur-md shadow-lg rounded-lg py-2 z-50 transition-all duration-300 transform origin-top
                   ${showHommeMenu ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
               >
-                <Link 
-                  to="/products?category=men&type=sandale" 
-                  className="block px-4 py-2 hover:bg-black hover:text-white transition-colors duration-200"
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'sandale' })}
+                  className="block w-full text-left px-4 py-2 hover:bg-black hover:text-white transition-colors duration-200"
                 >
                   Sandales
-                </Link>
+                </button>
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'chaussure' })}
+                  className="block w-full text-left px-4 py-2 hover:bg-black hover:text-white transition-colors duration-200"
+                >
+                  Chaussures
+                </button>
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'espadrille' })}
+                  className="block w-full text-left px-4 py-2 hover:bg-black hover:text-white transition-colors duration-200"
+                >
+                  Espadrilles
+                </button>
+
               </div>
             </div>
             
@@ -159,14 +293,21 @@ const Navbar: React.FC = () => {
                 className={`absolute left-0 mt-2 w-56 bg-white/95 backdrop-blur-md shadow-lg rounded-lg py-2 z-50 transition-all duration-300 transform origin-top
                   ${showFemmeMenu ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
               >
-                {['Mules', 'Sabots', 'Chaussures', 'Sandales', 'Sacs'].map((item) => (
-                  <Link 
-                    key={item}
-                    to={`/products?category=women&type=${item.toLowerCase()}`}
-                    className="block px-4 py-2 hover:bg-black hover:text-white transition-colors duration-200"
+                {[
+                  { id: 'mule', label: 'Mules' },
+                  { id: 'sabot', label: 'Sabots' },
+                  { id: 'chaussure', label: 'Chaussures' },
+                  { id: 'sandale', label: 'Sandales' },
+                  { id: 'sac', label: 'Sacs' },
+                  { id: 'escarpin', label: 'Escarpins' }
+                ].map((item) => (
+                  <button 
+                    key={item.id}
+                    onClick={() => navigateToProductsWithFilters({ category: 'women', type: item.id })}
+                    className="block w-full text-left px-4 py-2 hover:bg-black hover:text-white transition-colors duration-200"
                   >
-                    {item}
-                  </Link>
+                    {item.label}
+                  </button>
                 ))}
               </div>
             </div>
@@ -176,7 +317,7 @@ const Navbar: React.FC = () => {
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link to="/about" className="relative group">
-              <span>A propos de nous</span>
+              <span>À propos</span>
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
             </Link>
           </div>
@@ -202,7 +343,12 @@ const Navbar: React.FC = () => {
                 <div className="absolute mt-2 right-0 w-80 bg-white/95 backdrop-blur-md rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto animate-fadeIn">
                   <div className="p-4">
                     <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-semibold">{searchResults.length} Results</h3>
+                      <h3 className="font-semibold">
+                        {searchResults.length} Résultat{searchResults.length !== 1 ? 's' : ''} 
+                        {searchQuery && (
+                          <span className="text-sm text-gray-500 ml-2">pour "{searchQuery}"</span>
+                        )}
+                      </h3>
                       <button onClick={closeSearchResults} className="p-1">
                         <X size={16} />
                       </button>
@@ -210,27 +356,58 @@ const Navbar: React.FC = () => {
                     
                     {searchResults.length > 0 ? (
                       <div className="space-y-4">
-                        {searchResults.map(product => (
+                        {searchResults.slice(0, 6).map(product => (
                           <Link 
                             to={`/products/${product.id}`} 
                             key={product.id}
                             onClick={closeSearchResults}
-                            className="flex items-center hover:bg-gray-50 p-2 rounded-lg"
+                            className="flex items-center py-2 hover:bg-gray-50 transition-colors"
                           >
-                            <img 
-                              src={product.image} 
-                              alt={product.name}
-                              className="w-12 h-12 object-cover rounded-md mr-3"
-                            />
-                            <div>
-                              <h4 className="font-medium">{product.name}</h4>
-                              <p className="text-sm text-gray-600">${product.price.toFixed(2)}</p>
+                            <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                              <img 
+                                src={product.image} 
+                                alt={product.name} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="ml-3 flex-grow">
+                              <p className="text-sm font-medium line-clamp-1">{product.name}</p>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>{product.category === 'men' ? 'Homme' : 'Femme'}</span>
+                                <span>•</span>
+                                <span>{product.type}</span>
+                                {product.color && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{product.color}</span>
+                                  </>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 font-medium">{product.price.toFixed(2)} DHS</p>
                             </div>
                           </Link>
                         ))}
+                        {searchResults.length > 6 && (
+                          <div className="text-center pt-2 border-t">
+                            <button 
+                              onClick={() => {
+                                handleSearch(new Event('submit') as any);
+                                closeSearchResults();
+                              }}
+                              className="text-sm text-blue-600 hover:underline"
+                            >
+                              Voir tous les {searchResults.length} résultats
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <p className="text-gray-500 text-center py-4">No products found</p>
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">Aucun produit trouvé</p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Essayez avec d'autres mots-clés
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -309,7 +486,9 @@ const Navbar: React.FC = () => {
           {showSearchResults && (
             <div className="mb-6 bg-white rounded-xl shadow-lg p-4">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-lg">{searchResults.length} Résultats</h3>
+                <h3 className="font-semibold text-lg">
+                  {searchResults.length} Résultat{searchResults.length !== 1 ? 's' : ''}
+                </h3>
                 <button 
                   onClick={closeSearchResults}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -337,7 +516,12 @@ const Navbar: React.FC = () => {
                       />
                       <div>
                         <h4 className="font-medium text-base">{product.name}</h4>
-                        <p className="text-gray-600">${product.price.toFixed(2)}</p>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <span>{product.category === 'men' ? 'Homme' : 'Femme'}</span>
+                          <span>•</span>
+                          <span>{product.type}</span>
+                        </div>
+                        <p className="text-gray-600 font-medium">{product.price.toFixed(2)} DHS</p>
                       </div>
                     </Link>
                   ))}
@@ -376,13 +560,36 @@ const Navbar: React.FC = () => {
               <div className={`mt-2 space-y-1 transition-all duration-300 ${
                 activeMobileSubMenu === 'homme' ? 'h-auto opacity-100' : 'h-0 opacity-0 overflow-hidden'
               }`}>
-                <Link 
-                  to="/products?category=men&type=sandale" 
-                  className="block py-3 pl-6 hover:pl-8 transition-all duration-200"
-                  onClick={() => setIsOpen(false)}
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'sandale' })}
+                  className="block w-full text-left py-3 pl-6 hover:pl-8 transition-all duration-200"
                 >
                   Sandales
-                </Link>
+                </button>
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'chaussure' })}
+                  className="block w-full text-left py-3 pl-6 hover:pl-8 transition-all duration-200"
+                >
+                  Chaussures
+                </button>
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'espadrille' })}
+                  className="block w-full text-left py-3 pl-6 hover:pl-8 transition-all duration-200"
+                >
+                  Espadrilles
+                </button>
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'mule' })}
+                  className="block w-full text-left py-3 pl-6 hover:pl-8 transition-all duration-200"
+                >
+                  Mules
+                </button>
+                <button 
+                  onClick={() => navigateToProductsWithFilters({ category: 'men', type: 'sabot' })}
+                  className="block w-full text-left py-3 pl-6 hover:pl-8 transition-all duration-200"
+                >
+                  Sabots
+                </button>
               </div>
             </div>
             
@@ -404,15 +611,21 @@ const Navbar: React.FC = () => {
               <div className={`mt-2 space-y-1 transition-all duration-300 ${
                 activeMobileSubMenu === 'femme' ? 'h-auto opacity-100' : 'h-0 opacity-0 overflow-hidden'
               }`}>
-                {['Mules', 'Sabots', 'Chaussures', 'Sandales', 'Sacs'].map((item) => (
-                  <Link 
-                    key={item}
-                    to={`/products?category=women&type=${item.toLowerCase()}`}
-                    className="block py-3 pl-6 hover:pl-8 transition-all duration-200"
-                    onClick={() => setIsOpen(false)}
+                {[
+                  { id: 'mule', label: 'Mules' },
+                  { id: 'sabot', label: 'Sabots' },
+                  { id: 'chaussure', label: 'Chaussures' },
+                  { id: 'sandale', label: 'Sandales' },
+                  { id: 'sac', label: 'Sacs' },
+                  { id: 'escarpin', label: 'Escarpins' }
+                ].map((item) => (
+                  <button 
+                    key={item.id}
+                    onClick={() => navigateToProductsWithFilters({ category: 'women', type: item.id })}
+                    className="block w-full text-left py-3 pl-6 hover:pl-8 transition-all duration-200"
                   >
-                    {item}
-                  </Link>
+                    {item.label}
+                  </button>
                 ))}
               </div>
             </div>

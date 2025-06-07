@@ -1,5 +1,4 @@
 import React from 'react';
-import Newsletter from '../components/Newsletter';
 import { FiAward } from "react-icons/fi";
 import { FaHeartbeat } from "react-icons/fa";
 import { Footprints } from "lucide-react";
@@ -86,14 +85,14 @@ const AboutPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-x-4">
                 <div className="rounded-lg overflow-hidden mt-8 parallax-float-1 custom-black-shadow">
                   <img 
-                    src="https://images.unsplash.com/photo-1534653299134-96a171b61581?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
+                    src="assets\images\about\Chauss_3.png" 
                     alt="Chaussure sportive noire" 
                     className="w-full h-auto rounded-lg"
                   />
                 </div>
                 <div className="rounded-lg overflow-hidden mt-9 parallax-float-2 custom-black-shadow">
                   <img 
-                    src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
+                    src="assets\images\about\Chauss_2.png" 
                     alt="Chaussure élégante" 
                     className="w-full h-auto rounded-lg"
                   />
@@ -148,7 +147,7 @@ const AboutPage: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="md:w-1/2 mb-10 md:mb-0">
               <img 
-                src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
+                src="assets\images\about\Chauss_femme.png"
                 alt="Chaussure colorée" 
                 className="rounded-lg shadow-2xl"
               />

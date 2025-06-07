@@ -7,14 +7,14 @@ const DiscoverMore: React.FC = () => {
     {
       title: 'Collection Homme',
       subtitle: 'Découvrez notre sélection de chaussures pour homme',
-      image: 'https://images.pexels.com/photos/1456706/pexels-photo-1456706.jpeg?auto=compress&cs=tinysrgb&w=1200',
+      image: '/assets/images/Collection_Homme.png',
       link: '/products?category=men',
       label: 'Men'
     },
     {
       title: 'Collection Femme',
       subtitle: 'Explorez nos modèles exclusifs pour femme',
-      image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1200',
+      image: '/assets/images/Collection_Femme.png',
       link: '/products?category=women',
       label: 'Women'
     }
@@ -40,7 +40,7 @@ const DiscoverMore: React.FC = () => {
               className="group relative overflow-hidden rounded-2xl bg-black"
             >
               {/* Image avec overlay */}
-              <div className="aspect-[16/9] relative overflow-hidden">
+              <div className="aspect-[4/3] relative overflow-hidden">
                 <img
                   src={category.image}
                   alt={category.title}
@@ -78,8 +78,8 @@ const DiscoverMore: React.FC = () => {
         <div className="mt-16 sm:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             {
-              title: 'Livraison gratuite',
-              description: 'Pour toute commande supérieure à 1000 MAD'
+              title: 'Livraison rapide',
+              description: 'Recevez votre commande en 3-5 jours'
             },
             {
               title: 'Retours faciles',

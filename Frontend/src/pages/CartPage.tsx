@@ -17,8 +17,8 @@ const CartPage: React.FC = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError, setPromoError] = useState('');
   
-  // Frais de livraison en fonction du total
-  const shippingFee = totalPrice > 800 ? 0 : 50;
+  // Frais de livraison fixes
+  const shippingFee = 50;
 
   const handleApplyPromo = () => {
     // Simuler l'application d'un code promo
@@ -119,7 +119,7 @@ const CartPage: React.FC = () => {
                         </div>
                         
                         <div className="mt-3 sm:mt-0 text-lg font-medium">
-                          {(item.product.price * item.quantity).toFixed(2)} MAD
+                          {(item.product.price * item.quantity).toFixed(2)} DHS
                         </div>
                       </div>
                       
@@ -211,25 +211,25 @@ const CartPage: React.FC = () => {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Sous-total</span>
-                  <span>{totalPrice.toFixed(2)} MAD</span>
+                  <span>{totalPrice.toFixed(2)} DHS</span>
                 </div>
                 
                 {promoApplied && promoDiscount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Réduction</span>
-                    <span>-{promoDiscount.toFixed(2)} MAD</span>
+                    <span>-{promoDiscount.toFixed(2)} DHS</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600">Livraison</span>
-                  <span>{shippingFee === 0 ? 'Gratuite' : `${shippingFee.toFixed(2)} MAD`}</span>
+                  <span>{shippingFee.toFixed(2)} DHS</span>
                 </div>
                 
                 <div className="border-t pt-3 mt-3">
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>{finalTotal.toFixed(2)} MAD</span>
+                    <span>{finalTotal.toFixed(2)} DHS</span>
                   </div>
                   <p className="text-gray-500 text-sm mt-1">TTC</p>
                 </div>
@@ -244,7 +244,7 @@ const CartPage: React.FC = () => {
               <div className="space-y-3 text-sm text-gray-600">
                 <div className="flex items-center">
                   <Truck size={16} className="mr-2" />
-                  <span>Livraison offerte à partir de 800 MAD d'achat</span>
+                  <span>Livraison standard</span>
                 </div>
                 <div className="flex items-center">
                   <ShieldCheck size={16} className="mr-2" />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Calendar, User, Tag, ChevronRight, ArrowRight } from 'lucide-react';
+import { Calendar, User, Tag, ChevronRight, ArrowRight, Search, Clock } from 'lucide-react';
 import { Link } from '../components/Link';
-import Newsletter from '../components/Newsletter';
+
 
 // Données simulées pour les articles de blog
 const blogPosts = [
@@ -117,79 +117,83 @@ const BlogPage: React.FC = () => {
     : null;
 
   return (
-    <div className="pt-24 pb-16">
-      {/* Hero Section */}
-      <div className="relative h-[30vh] md:h-[40vh] overflow-hidden bg-gray-900">
-        <img 
-          src="https://images.pexels.com/photos/1240892/pexels-photo-1240892.jpeg?auto=compress&cs=tinysrgb&w=1600" 
-          alt="Blog hero" 
-          className="absolute w-full h-full object-cover opacity-50"
-        />
-        <div className="absolute inset-0 flex items-center justify-center text-center">
-          <div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">Notre Blog</h1>
-            <p className="text-xl text-white max-w-2xl mx-auto px-4">
-              Conseils, tendances et actualités sur l'univers de la chaussure
+    <div className="pt-24 pb-16 bg-gray-50">
+      {/* Hero Section - Modern & Minimal */}
+      <div className="bg-gradient-to-br from-black via-gray-900 to-black text-white py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Blog YOOZAK
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-100 max-w-3xl mx-auto leading-relaxed mb-8">
+              Conseils d'experts, tendances mode et guides d'achat pour vous accompagner dans votre style
             </p>
+            <div className="flex justify-center">
+              <div className="bg-white/10 backdrop-blur-sm rounded-full px-6 py-2">
+                <span className="text-sm font-medium">Découvrez nos derniers articles</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       
       {/* Blog Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex flex-col lg:flex-row gap-12">
           {/* Main Content */}
           <div className={`w-full ${selectedPost ? 'lg:w-3/4' : 'lg:w-2/3'}`}>
             {selectedPost ? (
               // Article détaillé
               currentPost && (
                 <div>
-                  <div className="mb-6">
+                  <div className="mb-8">
                     <button 
                       onClick={() => setSelectedPost(null)}
-                      className="flex items-center text-gray-600 hover:text-black transition-colors"
+                      className="flex items-center text-gray-600 hover:text-black transition-all duration-200 bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md"
                     >
-                      <ChevronRight size={16} className="transform rotate-180 mr-1" />
-                      <span>Retour aux articles</span>
+                      <ChevronRight size={16} className="transform rotate-180 mr-2" />
+                      <span className="font-medium">Retour aux articles</span>
                     </button>
                   </div>
                   
-                  <article>
+                  <article className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     <img 
                       src={currentPost.image} 
                       alt={currentPost.title}
-                      className="w-full h-[400px] object-cover rounded-lg mb-6"
+                      className="w-full h-[400px] object-cover"
                     />
                     
-                    <h1 className="text-3xl font-bold mb-4">{currentPost.title}</h1>
-                    
-                    <div className="flex flex-wrap items-center text-sm text-gray-600 mb-6 gap-4">
-                      <div className="flex items-center">
-                        <Calendar size={16} className="mr-1" />
-                        <span>{currentPost.date}</span>
+                    <div className="p-8">
+                      <h1 className="text-4xl font-bold mb-6 text-gray-900">{currentPost.title}</h1>
+                      
+                      <div className="flex flex-wrap items-center text-sm text-gray-500 mb-8 gap-6">
+                        <div className="flex items-center bg-gray-50 px-3 py-1 rounded-full">
+                          <Calendar size={14} className="mr-2" />
+                          <span>{currentPost.date}</span>
+                        </div>
+                        <div className="flex items-center bg-gray-50 px-3 py-1 rounded-full">
+                          <User size={14} className="mr-2" />
+                          <span>{currentPost.author}</span>
+                        </div>
+                        <div className="flex items-center bg-black text-white px-3 py-1 rounded-full">
+                          <Tag size={14} className="mr-2" />
+                          <span>{currentPost.category}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <User size={16} className="mr-1" />
-                        <span>{currentPost.author}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Tag size={16} className="mr-1" />
-                        <span>{currentPost.category}</span>
-                      </div>
-                    </div>
-                    
-                    <div 
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{ __html: currentPost.content }}
-                    ></div>
-                    
-                    <div className="mt-8 pt-6 border-t">
-                      <div className="flex flex-wrap gap-2">
-                        {currentPost.tags.map(tag => (
-                          <span key={tag} className="px-3 py-1 bg-gray-100 text-sm rounded-full">
-                            #{tag}
-                          </span>
-                        ))}
+                      
+                      <div 
+                        className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: currentPost.content }}
+                      ></div>
+                      
+                      <div className="mt-8 pt-6 border-t border-gray-100">
+                        <div className="flex flex-wrap gap-2">
+                          {currentPost.tags.map(tag => (
+                            <span key={tag} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-sm rounded-full font-medium transition-colors">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </article>
@@ -198,76 +202,88 @@ const BlogPage: React.FC = () => {
             ) : (
               // Liste des articles
               <>
-                <div className="flex justify-between items-center mb-8 flex-col md:flex-row gap-4">
-                  <h2 className="text-2xl font-bold">Articles Récents</h2>
+                <div className="mb-12">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Articles Récents</h2>
                   
-                  <div className="flex gap-4 items-center flex-wrap">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-black"
-                      />
+                  <div className="flex justify-center mb-8">
+                    <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-2xl">
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1">
+                          <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Rechercher un article..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                          />
+                        </div>
+                        
+                        <select
+                          value={filterCategory || ''}
+                          onChange={e => setFilterCategory(e.target.value || null)}
+                          className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white min-w-[180px]"
+                        >
+                          <option value="">Toutes les catégories</option>
+                          {categories.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                    
-                    <select
-                      value={filterCategory || ''}
-                      onChange={e => setFilterCategory(e.target.value || null)}
-                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      <option value="">Toutes les catégories</option>
-                      {categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
                   </div>
                 </div>
                 
                 {filteredPosts.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-lg text-gray-600">Aucun article ne correspond à votre recherche.</p>
+                  <div className="text-center py-16">
+                    <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
+                      <Search size={48} className="mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucun résultat</h3>
+                      <p className="text-gray-600">Aucun article ne correspond à votre recherche.</p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {filteredPosts.map(post => (
-                      <div key={post.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-                        <div className="relative h-48 overflow-hidden">
+                      <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group">
+                        <div className="relative h-64 overflow-hidden">
                           <img 
                             src={post.image} 
                             alt={post.title}
-                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
-                          <div className="absolute top-3 left-3 bg-black bg-opacity-80 text-white text-xs px-3 py-1 rounded-full">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                          <div className="absolute top-4 left-4 bg-black text-white text-xs font-semibold px-3 py-1 rounded-full">
                             {post.category}
                           </div>
                         </div>
                         
                         <div className="p-6">
-                          <div className="flex items-center text-sm text-gray-600 mb-3 gap-4">
-                            <div className="flex items-center">
-                              <Calendar size={14} className="mr-1" />
+                          <div className="flex items-center text-sm text-gray-500 mb-4 gap-4">
+                            <div className="flex items-center bg-gray-50 px-2 py-1 rounded-md">
+                              <Calendar size={12} className="mr-1" />
                               <span>{post.date}</span>
                             </div>
-                            <div className="flex items-center">
-                              <User size={14} className="mr-1" />
+                            <div className="flex items-center bg-gray-50 px-2 py-1 rounded-md">
+                              <User size={12} className="mr-1" />
                               <span>{post.author}</span>
                             </div>
                           </div>
                           
-                          <h3 className="text-xl font-bold mb-2">{post.title}</h3>
-                          <p className="text-gray-600 mb-4">{post.excerpt}</p>
+                          <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-black transition-colors line-clamp-2">
+                            {post.title}
+                          </h3>
+                          <p className="text-gray-600 mb-6 line-clamp-3 leading-relaxed">{post.excerpt}</p>
                           
                           <button
                             onClick={() => setSelectedPost(post.id)}
-                            className="flex items-center font-medium text-black hover:text-gray-700 transition-colors"
+                            className="flex items-center font-semibold text-black hover:gap-3 transition-all duration-200 group/btn"
                           >
                             <span>Lire la suite</span>
-                            <ArrowRight size={16} className="ml-1" />
+                            <ArrowRight size={16} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
                           </button>
                         </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
                 )}
@@ -277,15 +293,17 @@ const BlogPage: React.FC = () => {
           
           {/* Sidebar */}
           {!selectedPost && (
-            <div className="w-full lg:w-1/3">
-              <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                <h3 className="text-xl font-bold mb-4">Catégories</h3>
+            <div className="w-full lg:w-1/3 space-y-8">
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-xl font-bold mb-6 text-gray-900">Catégories</h3>
                 <ul className="space-y-2">
                   <li>
                     <button
                       onClick={() => setFilterCategory(null)}
-                      className={`w-full text-left px-2 py-1 hover:bg-gray-100 rounded ${
-                        filterCategory === null ? 'font-medium text-black' : 'text-gray-600'
+                      className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 ${
+                        filterCategory === null 
+                          ? 'bg-black text-white font-semibold' 
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                       }`}
                     >
                       Toutes les catégories
@@ -295,12 +313,18 @@ const BlogPage: React.FC = () => {
                     <li key={category}>
                       <button
                         onClick={() => setFilterCategory(category)}
-                        className={`w-full text-left px-2 py-1 hover:bg-gray-100 rounded flex justify-between items-center ${
-                          filterCategory === category ? 'font-medium text-black' : 'text-gray-600'
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex justify-between items-center ${
+                          filterCategory === category 
+                            ? 'bg-black text-white font-semibold' 
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                       >
                         <span>{category}</span>
-                        <span className="bg-gray-200 text-xs px-2 py-0.5 rounded-full">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          filterCategory === category 
+                            ? 'bg-white/20 text-white' 
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
                           {blogPosts.filter(post => post.category === category).length}
                         </span>
                       </button>
@@ -309,37 +333,40 @@ const BlogPage: React.FC = () => {
                 </ul>
               </div>
               
-              <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                <h3 className="text-xl font-bold mb-4">Articles populaires</h3>
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-xl font-bold mb-6 text-gray-900">Articles populaires</h3>
                 <div className="space-y-4">
                   {blogPosts.slice(0, 3).map(post => (
                     <button
                       key={post.id}
                       onClick={() => setSelectedPost(post.id)}
-                      className="flex gap-3 hover:bg-gray-100 p-2 rounded-lg w-full text-left"
+                      className="flex gap-4 hover:bg-gray-50 p-3 rounded-xl w-full text-left transition-all duration-200 group"
                     >
                       <img 
                         src={post.image} 
                         alt={post.title}
-                        className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0 group-hover:scale-105 transition-transform duration-200"
                       />
-                      <div>
-                        <h4 className="font-medium line-clamp-2">{post.title}</h4>
-                        <p className="text-sm text-gray-600 mt-1">{post.date}</p>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold line-clamp-2 text-gray-900 group-hover:text-black mb-1">{post.title}</h4>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Clock size={10} className="mr-1" />
+                          <span>{post.date}</span>
+                        </div>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
               
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-xl font-bold mb-4">Tags</h3>
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-xl font-bold mb-6 text-gray-900">Tags</h3>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(new Set(blogPosts.flatMap(post => post.tags))).map(tag => (
                     <button
                       key={tag}
                       onClick={() => setSearchQuery(tag)}
-                      className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-sm rounded-full transition-colors"
+                      className="px-4 py-2 bg-gray-100 hover:bg-black hover:text-white text-sm rounded-full transition-all duration-200 font-medium"
                     >
                       #{tag}
                     </button>
@@ -351,7 +378,7 @@ const BlogPage: React.FC = () => {
         </div>
       </div>
       
-      <Newsletter />
+
     </div>
   );
 };

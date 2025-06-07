@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 interface ParallaxSectionProps {
   imageUrl: string;
@@ -54,9 +55,12 @@ const ParallaxSection: React.FC<ParallaxSectionProps> = ({
               {subtitle}
             </p>
             <div className="pt-4">
-              <button className="w-full sm:w-auto px-8 py-3 bg-black text-white font-medium rounded-full hover:bg-opacity-90 transition-all transform hover:scale-105 hover:shadow-lg">
+              <Link 
+                to="/blog" 
+                className="inline-block w-full sm:w-auto px-8 py-3 bg-black text-white font-medium rounded-full hover:bg-opacity-90 transition-all transform hover:scale-105 hover:shadow-lg"
+              >
                 En savoir plus
-              </button>
+              </Link>
             </div>
           </div>
           
