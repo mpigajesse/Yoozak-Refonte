@@ -6,6 +6,8 @@ from .models import GoogleSheetConfig, SyncLog
 from .google_sheet_sync import GoogleSheetSync
 from django.utils import timezone
 from .forms import GoogleSheetConfigForm
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db import models
 
 def is_admin(user):
     """Vérifie si l'utilisateur est un administrateur"""
@@ -107,8 +109,37 @@ def config_delete(request, pk):
 @login_required
 def sync_logs(request):
     """Affichage des logs de synchronisation"""
+    # Récupérer le terme de recherche
+    search_query = request.GET.get('search', '')
+    
+    # Récupérer tous les logs, triés par date décroissante
     logs = SyncLog.objects.all().order_by('-sync_date')
-    return render(request, 'sync/sync_logs.html', {'logs': logs})
+    
+    # Appliquer la recherche
+    if search_query:
+        logs = logs.filter(
+            models.Q(sheet_config__sheet_name__icontains=search_query) |
+            models.Q(status__icontains=search_query) |
+            models.Q(triggered_by__icontains=search_query) |
+            models.Q(errors__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(logs, 10)  # 10 logs par page
+    page = request.GET.get('page', 1)
+    
+    try:
+        logs_page = paginator.page(page)
+    except PageNotAnInteger:
+        logs_page = paginator.page(1)
+    except EmptyPage:
+        logs_page = paginator.page(paginator.num_pages)
+    
+    context = {
+        'logs': logs_page,
+        'search_query': search_query,
+    }
+    return render(request, 'sync/sync_logs.html', context)
 
 @login_required
 @user_passes_test(is_admin)

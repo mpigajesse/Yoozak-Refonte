@@ -10,10 +10,13 @@ class SessionVerificationMiddleware:
         # Liste des URLs qui ne nécessitent pas de vérification
         public_urls = [
             reverse('accounts:login'),
-            '/admin/',  # Exclure toutes les URLs de l'admin
             '/static/',
             '/media/',
         ]
+
+        # Exclure complètement toutes les URLs de l'admin Django
+        if request.path.startswith('/admin/'):
+            return self.get_response(request)
 
         # Vérifier si l'URL actuelle est publique
         if any(request.path.startswith(url) for url in public_urls):
@@ -26,8 +29,6 @@ class SessionVerificationMiddleware:
         # Vérifier si la session est vérifiée uniquement pour les utilisateurs authentifiés
         if not request.session.get('password_verified', False):
             messages.warning(request, "Votre session a expiré. Veuillez vous reconnecter.")
-            if request.user.is_staff:
-                return redirect('admin:login')
             return redirect('accounts:login')
 
         response = self.get_response(request)

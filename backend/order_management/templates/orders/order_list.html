@@ -1,111 +1,214 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load order_tags %}
 
-{% block title %}Liste des commandes{% endblock %}
+{% block title %}Liste des Commandes{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <h1 class="mb-4">Liste des commandes</h1>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête avec titre et bouton d'ajout -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Liste des Commandes</h1>
+            <p class="mt-1 text-sm text-gray-500">Gérez et suivez toutes vos commandes</p>
+        </div>
+        <div class="mt-4 sm:mt-0">
+            <a href="{% url 'orders:create_order' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nouvelle commande
+            </a>
+        </div>
+    </div>
     
-    <!-- Filtres -->
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label for="status" class="form-label">Statut</label>
-                    <select name="status" id="status" class="form-select">
-                        <option value="">Tous les statuts</option>
-                        <option value="non_affectee" {% if selected_status == 'non_affectee' %}selected{% endif %}>Non affectée</option>
-                        <option value="affectee" {% if selected_status == 'affectee' %}selected{% endif %}>Affectée</option>
-                        <option value="en_cours_confirmation" {% if selected_status == 'en_cours_confirmation' %}selected{% endif %}>En cours de confirmation</option>
-                        <option value="confirmee" {% if selected_status == 'confirmee' %}selected{% endif %}>Confirmée</option>
-                        <option value="erronnee" {% if selected_status == 'erronnee' %}selected{% endif %}>Erronée</option>
-                        <option value="doublon" {% if selected_status == 'doublon' %}selected{% endif %}>Doublon</option>
-                        <option value="annulee" {% if selected_status == 'annulee' %}selected{% endif %}>Annulée</option>
-                    </select>
+    <!-- Section des filtres -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Champ de recherche -->
+                <div class="lg:col-span-2">
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Rechercher</label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <input type="text" 
+                               name="search" 
+                               id="search" 
+                               value="{{ search_query }}"
+                               class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md" 
+                               placeholder="Rechercher par n° commande, client, téléphone...">
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label for="operator" class="form-label">Opérateur</label>
-                    <select name="operator" id="operator" class="form-select">
-                        <option value="">Tous les opérateurs</option>
-                        {% for operator in operators %}
-                        <option value="{{ operator.id }}" {% if selected_operator == operator.id|stringformat:"s" %}selected{% endif %}>
-                            {{ operator.user.username }}
-                        </option>
+
+                <!-- Filtre par statut -->
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                    <select name="status" id="status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="">Tous les statuts</option>
+                        {% for status_code, status_label in status_choices %}
+                            <option value="{{ status_code }}" {% if selected_status == status_code %}selected{% endif %}>{{ status_label }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="bi bi-funnel"></i> Filtrer
+
+                <!-- Filtre par opérateur -->
+                <div>
+                    <label for="operator" class="block text-sm font-medium text-gray-700 mb-1">Opérateur</label>
+                    <select name="operator" id="operator" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="">Tous les opérateurs</option>
+                        {% for op in operators %}
+                            <option value="{{ op.id }}" {% if selected_operator == op.id|stringformat:"s" %}selected{% endif %}>{{ op.user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Boutons -->
+                <div class="lg:col-span-4 flex justify-end space-x-3">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-4.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                        </svg>
+                        Filtrer
                     </button>
-                    <a href="{% url 'orders:order_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Réinitialiser
+                    <a href="{% url 'orders:order_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Réinitialiser
                     </a>
                 </div>
+                </div>
             </form>
-        </div>
     </div>
 
-    <!-- Liste des commandes -->
-    <div class="card shadow">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
+    <!-- Tableau des commandes -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
                         <tr>
-                            <th>N° Commande</th>
-                            <th>Client</th>
-                            <th>Produit</th>
-                            <th>Statut</th>
-                            <th>Opérateur</th>
-                            <th>Date création</th>
-                            <th>Actions</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° Commande</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opérateur</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date création</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                <tbody class="bg-white divide-y divide-gray-200">
                         {% for order in orders %}
-                        <tr>
-                            <td>{{ order.order_number }}</td>
-                            <td>{{ order.client_name }}</td>
-                            <td>{{ order.product }}</td>
-                            <td>
-                                <span class="badge {% if order.status == 'non_affectee' %}bg-warning{% elif order.status == 'affectee' %}bg-info{% elif order.status == 'en_cours_confirmation' %}bg-primary{% elif order.status == 'confirmee' %}bg-success{% elif order.status == 'erronnee' %}bg-danger{% elif order.status == 'doublon' %}bg-secondary{% elif order.status == 'annulee' %}bg-danger{% endif %}">
-                                    {% if order.status == 'non_affectee' %}
-                                        Non affectée
-                                    {% elif order.status == 'affectee' %}
-                                        Affectée
-                                    {% elif order.status == 'en_cours_confirmation' %}
-                                        En cours de confirmation
-                                    {% elif order.status == 'confirmee' %}
-                                        Confirmée
-                                    {% elif order.status == 'erronnee' %}
-                                        Erronée
-                                    {% elif order.status == 'doublon' %}
-                                        Doublon
-                                    {% elif order.status == 'annulee' %}
-                                        Annulée
-                                    {% endif %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ order.order_number }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.client_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.product }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if order.status == 'non_affectee' %} bg-yellow-100 text-yellow-800
+                                {% elif order.status == 'affectee' %} bg-blue-100 text-blue-800
+                                {% elif order.status == 'en_cours_confirmation' %} bg-indigo-100 text-indigo-800
+                                {% elif order.status == 'confirmee' %} bg-green-100 text-green-800
+                                {% elif order.status == 'erronnee' %} bg-red-100 text-red-800
+                                {% elif order.status == 'doublon' %} bg-gray-100 text-gray-800
+                                {% elif order.status == 'annulee' %} bg-pink-100 text-pink-800
+                                {% endif %}">
+                                {{ order.get_status_display }}
                                 </span>
                             </td>
-                            <td>{{ order.operator.user.username|default:"-" }}</td>
-                            <td>{{ order.creation_date|date:"d/m/Y H:i" }}</td>
-                            <td>
-                                <a href="{% url 'orders:order_detail' order.yoozak_id %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.operator.user.username|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.creation_date|date:"d/m/Y H:i" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="{% url 'orders:order_detail' order.yoozak_id %}" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                Détails
                                 </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center">Aucune commande trouvée</td>
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <div class="text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z" />
+                                </svg>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune commande</h3>
+                                <p class="mt-1 text-sm text-gray-500">Aucune commande ne correspond aux critères de recherche.</p>
+                            </div>
+                        </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if orders.paginator.num_pages > 1 %}
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if orders.has_previous %}
+            <a href="?page={{ orders.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_operator %}&operator={{ selected_operator }}{% endif %}" 
+               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Précédent
+            </a>
+            {% endif %}
+            {% if orders.has_next %}
+            <a href="?page={{ orders.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_operator %}&operator={{ selected_operator }}{% endif %}" 
+               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Suivant
+            </a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Affichage de <span class="font-medium">{{ orders.start_index }}</span> à <span class="font-medium">{{ orders.end_index }}</span> sur <span class="font-medium">{{ orders.paginator.count }}</span> commandes
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if orders.has_previous %}
+                    <a href="?page={{ orders.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_operator %}&operator={{ selected_operator }}{% endif %}" 
+                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Précédent</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+
+                    {% for i in orders.paginator.page_range %}
+                        {% if orders.number == i %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-700">
+                            {{ i }}
+                        </span>
+                        {% elif i > orders.number|add:"-3" and i < orders.number|add:"3" %}
+                        <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_operator %}&operator={{ selected_operator }}{% endif %}" 
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ i }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if orders.has_next %}
+                    <a href="?page={{ orders.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_operator %}&operator={{ selected_operator }}{% endif %}" 
+                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Suivant</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                </nav>
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

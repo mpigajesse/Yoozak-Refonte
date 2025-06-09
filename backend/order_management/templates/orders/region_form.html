@@ -4,31 +4,96 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">{{ title }}</h6>
-                </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nom de la région</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'orders:region_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Retour
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Enregistrer
-                            </button>
-                        </div>
-                    </form>
-                </div>
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto">
+        <!-- En-tête -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">{{ title }}</h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if region %}
+                    Modifier les informations de la région
+                    {% else %}
+                    Créer une nouvelle région
+                    {% endif %}
+                </p>
             </div>
+            <a href="{% url 'orders:region_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Retour
+            </a>
+        </div>
+
+        <!-- Formulaire -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <form method="post" class="space-y-6 p-6">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="rounded-md bg-red-50 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Des erreurs sont survenues</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Nom de la région</label>
+                    <div class="mt-1">
+                        <input type="text" 
+                               name="name" 
+                               id="name" 
+                               value="{{ region.name|default:'' }}"
+                               class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.name.errors %}border-red-300{% endif %}"
+                               required>
+                        {% if form.name.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+                    {% if form.name.help_text %}
+                    <p class="mt-2 text-sm text-gray-500">{{ form.name.help_text }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    {% if region %}
+                    <a href="{% url 'orders:region_delete' region.id %}" 
+                       class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Supprimer
+                    </a>
+                    {% endif %}
+                    <button type="submit" 
+                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {% if region %}Enregistrer les modifications{% else %}Créer la région{% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

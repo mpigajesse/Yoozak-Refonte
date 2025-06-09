@@ -1,45 +1,729 @@
 {% extends 'base.html' %}
 
-{% block title %}Accueil{% endblock %}
+{% block title %}Tableau de bord - Yoozak{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ---- TENDANCE DES COMMANDES (GRAPHIQUE PRINCIPAL) ----
+    let ordersChart; // Rendre la variable accessible
+    try {
+        const ordersChartCtx = document.getElementById('ordersChart').getContext('2d');
+        const initialLabels = JSON.parse('{{ chart_labels_json|safe|escapejs }}');
+        const initialData = JSON.parse('{{ chart_data_json|safe|escapejs }}');
+
+        ordersChart = new Chart(ordersChartCtx, {
+            type: 'line',
+            data: {
+                labels: initialLabels,
+                datasets: [{
+                    label: 'Commandes',
+                    data: initialData,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' }, ticks: { precision: 0 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Tendance des commandes:", e);
+    }
+
+    // Fonction pour mettre à jour le graphique de tendance
+    window.updateChart = function(period) {
+        fetch(`/api/chart-data/?period=${period}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('La réponse du réseau n\'était pas correcte');
+                }
+                return response.json();
+            })
+            .then(data => {
+                ordersChart.data.labels = data.labels;
+                ordersChart.data.datasets[0].data = data.values;
+                ordersChart.update();
+            })
+            .catch(error => {
+                console.error('Erreur lors de la mise à jour du graphique:', error);
+            });
+    }
+
+    // Gestion des clics sur les boutons de période
+    const periodButtons = document.querySelectorAll('.chart-period-btn');
+    periodButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Mettre à jour le style des boutons
+            periodButtons.forEach(btn => {
+                btn.classList.remove('bg-white', 'shadow-sm');
+            });
+            this.classList.add('bg-white', 'shadow-sm');
+            
+            // Mettre à jour le graphique
+            const period = this.getAttribute('data-period');
+            updateChart(period);
+        });
+    });
+
+    // ---- 3 GRAPHIQUES STATISTIQUES (JOUR/SEMAINE/MOIS) ----
+    
+    // 1. Nombre de commandes
+    try {
+        const ordersCountCtx = document.getElementById('ordersCountChart').getContext('2d');
+        const ordersByDay = JSON.parse('{{ orders_by_day_json|safe|escapejs }}');
+        const ordersCountLabels = ordersByDay.map(item => item.date);
+        const ordersCountData = ordersByDay.map(item => item.count);
+
+        new Chart(ordersCountCtx, {
+            type: 'bar',
+            data: {
+                labels: ordersCountLabels,
+                datasets: [{
+                    label: 'Nombre de commandes',
+                    data: ordersCountData,
+                    backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                    borderColor: 'rgb(13, 110, 253)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Nombre de commandes' } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Nombre de commandes:", e);
+    }
+    
+    // 2. Valeur des commandes
+    try {
+        const ordersValueCtx = document.getElementById('ordersValueChart').getContext('2d');
+        const ordersByDay = JSON.parse('{{ orders_by_day_json|safe|escapejs }}');
+        const ordersValueLabels = ordersByDay.map(item => item.date);
+        const ordersValueData = ordersByDay.map(item => item.value);
+
+        new Chart(ordersValueCtx, {
+            type: 'bar',
+            data: {
+                labels: ordersValueLabels,
+                datasets: [{
+                    label: 'Valeur des commandes',
+                    data: ordersValueData,
+                    backgroundColor: 'rgba(255, 193, 7, 0.5)',
+                    borderColor: 'rgb(255, 193, 7)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Valeur (DH)' } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Valeur des commandes:", e);
+    }
+    
+    // 3. Nombre d'articles
+    try {
+        const articlesCountCtx = document.getElementById('articlesCountChart').getContext('2d');
+        const articlesByDay = JSON.parse('{{ articles_by_day_json|safe|escapejs }}');
+        const articlesLabels = articlesByDay.map(item => item.date);
+        const articlesCountData = articlesByDay.map(item => item.total_articles);
+
+        new Chart(articlesCountCtx, {
+            type: 'bar',
+            data: {
+                labels: articlesLabels,
+                datasets: [{
+                    label: "Nombre d'articles",
+                    data: articlesCountData,
+                    backgroundColor: 'rgba(25, 135, 84, 0.5)',
+                    borderColor: 'rgb(25, 135, 84)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: "Nombre d'articles" } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Erreur Nombre d'articles:", e);
+    }
+});
+</script>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
-            <div class="card shadow-sm mt-5">
-                <div class="card-body text-center">
-                    <h1 class="display-4 mb-4">Bienvenue sur le système de gestion des commandes</h1>
-                    
-                    {% if user.is_staff %}
-                        <p class="lead mb-4">Vous êtes connecté en tant qu'administrateur.</p>
-                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            <a href="{% url 'orders:admin_dashboard' %}" class="btn btn-primary btn-lg px-4 gap-3">
-                                <i class="bi bi-speedometer2"></i> Tableau de bord administrateur
-                            </a>
-                        </div>
-                    {% elif user.operator_profile %}
-                        <p class="lead mb-4">Vous êtes connecté en tant qu'opérateur.</p>
-                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            <a href="{% url 'accounts:operator_dashboard' %}" class="btn btn-primary btn-lg px-4 gap-3">
-                                <i class="bi bi-speedometer2"></i> Tableau de bord opérateur
-                            </a>
-                        </div>
-                    {% elif user.is_logistics %}
-                        <p class="lead mb-4">Vous êtes connecté en tant que responsable logistique.</p>
-                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            <a href="{% url 'orders:logistics_dashboard' %}" class="btn btn-primary btn-lg px-4 gap-3">
-                                <i class="bi bi-speedometer2"></i> Tableau de bord logistique
-                            </a>
-                        </div>
+<div class="container mx-auto px-4 py-6">
+    <!-- En-tête de la page avec animation subtile -->
+    <div class="mb-8 animate-fade-in">
+        <h1 class="text-4xl font-bold text-gray-800 tracking-tight">Tableau de bord</h1>
+        <p class="text-gray-600 mt-2">{{ current_date|date:"l d F Y" }} - Aperçu de vos activités</p>
+    </div>
+
+    <!-- Première ligne de statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Taux de confirmation -->
+        <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Taux de confirmation</p>
+                    <p class="text-3xl font-bold text-blue-600">{{ confirmation_rate|floatformat:1 }}%</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Articles commandés -->
+        <div class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-green-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Articles commandés</p>
+                    <p class="text-3xl font-bold text-green-600">{{ total_articles }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valeur totale -->
+        <div class="bg-gradient-to-br from-cyan-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-cyan-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Valeur totale</p>
+                    <p class="text-3xl font-bold text-cyan-600">{{ total_value|floatformat:2 }}</p>
+                    <p class="text-xs text-gray-500">DH</p>
+                </div>
+                <div class="bg-cyan-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valeur confirmée -->
+        <div class="bg-gradient-to-br from-yellow-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-yellow-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Valeur confirmée</p>
+                    <p class="text-3xl font-bold text-yellow-600">{{ confirmed_value|floatformat:2 }}</p>
+                    <p class="text-xs text-gray-500">DH</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deuxième ligne de statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Carte : Commandes en attente -->
+        <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-100">
+            <div class="flex items-center">
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Commandes en attente</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ pending_orders }}</p>
+                        {% if pending_orders_change > 0 %}
+                        <span class="ml-2 text-sm text-green-500">+{{ pending_orders_change }}%</span>
+                        {% elif pending_orders_change < 0 %}
+                        <span class="ml-2 text-sm text-red-500">{{ pending_orders_change }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte : Commandes du jour -->
+        <div class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-green-100">
+            <div class="flex items-center">
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Commandes du jour</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ orders_today }}</p>
+                        <span class="ml-2 text-xs text-gray-500">/ {{ orders_target }} objectif</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Barre de progression -->
+            <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-green-500 rounded-full" style="width: {{ orders_progress }}%"></div>
+            </div>
+        </div>
+
+        <!-- Carte : Opérateurs actifs -->
+        <div class="bg-gradient-to-br from-amber-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-amber-100">
+            <div class="flex items-center">
+                <div class="bg-amber-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Opérateurs actifs</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ active_operators }}</p>
+                        <span class="ml-2 text-xs text-gray-500">sur {{ total_operators }}</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Liste des opérateurs actifs -->
+            <div class="mt-4 flex -space-x-2 overflow-hidden">
+                {% for operator in active_operator_list %}
+                <div class="inline-block h-10 w-10 rounded-full ring-2 ring-white overflow-hidden bg-gray-200 flex items-center justify-center hover:z-10 transition-transform hover:scale-110" title="{{ operator.display_name }}">
+                    {% if operator.photo_url %}
+                        <img src="{{ operator.photo_url }}" alt="{{ operator.display_name }}" class="w-full h-full object-cover">
                     {% else %}
-                        <p class="lead mb-4">Vous n'avez pas de rôle spécifique.</p>
-                        <div class="alert alert-warning">
-                            Veuillez contacter l'administrateur pour obtenir les permissions nécessaires.
-                        </div>
+                        <span class="text-xs font-medium text-gray-600">{{ operator.initials }}</span>
                     {% endif %}
+                </div>
+                {% endfor %}
+                {% if active_operator_list|length == 0 %}
+                <div class="text-xs text-gray-500">Aucun opérateur actif</div>
+                {% endif %}
+            </div>
+                        </div>
+
+        <!-- Carte : Taux de confirmation -->
+        <div class="bg-gradient-to-br from-purple-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-purple-100">
+            <div class="flex items-center">
+                <div class="bg-purple-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                        </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Taux de confirmation</p>
+                    <div class="flex items-baseline">
+                        <p class="text-2xl font-bold text-gray-800">{{ confirmation_rate|floatformat:1 }}%</p>
+                        {% if confirmation_rate_change > 0 %}
+                        <span class="ml-2 text-sm text-green-500">+{{ confirmation_rate_change }}%</span>
+                        {% elif confirmation_rate_change < 0 %}
+                        <span class="ml-2 text-sm text-red-500">{{ confirmation_rate_change }}%</span>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section principale avec graphique et statistiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Graphique des commandes -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">Tendance des commandes</h2>
+                <div id="chart-period-buttons" class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                    <button data-period="week" class="chart-period-btn px-3 py-1 text-sm rounded-md text-gray-600 font-medium bg-white shadow-sm">Semaine</button>
+                    <button data-period="month" class="chart-period-btn px-3 py-1 text-sm rounded-md text-gray-600 font-medium">Mois</button>
+                </div>
+            </div>
+            <div class="relative h-[400px]">
+                <canvas id="ordersChart" class="w-full"></canvas>
+            </div>
+        </div>
+
+        <!-- Résumé et actions rapides -->
+        <div class="space-y-6">
+            <!-- Résumé des commandes -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Résumé des commandes</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-600">Total des commandes</span>
+                        <span class="font-bold text-gray-800">{{ total_orders }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                        <span class="text-gray-600">Commandes confirmées</span>
+                        <span class="font-bold text-green-600">{{ confirmed_orders }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                        <span class="text-gray-600">Valeur totale</span>
+                        <span class="font-bold text-blue-600">{{ total_value|floatformat:2 }} €</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Actions rapides</h2>
+                <div class="grid grid-cols-1 gap-3">
+                    <a href="{% url 'orders:create_order' %}" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Nouvelle commande</span>
+                    </a>
+                    <a href="{% url 'inventory:stock_list' %}" class="flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <span>Gérer les stocks</span>
+                    </a>
+                    <a href="{% url 'orders:order_list' %}" class="flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        <span>Liste des commandes</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section statistiques détaillées -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Statut des commandes -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Statut des commandes</h2>
+            <div class="space-y-4">
+                {% for status in orders_by_status %}
+                <div class="flex items-center justify-between p-4 rounded-lg 
+                    {% if status.status == 'affectee' %}bg-blue-50 border border-blue-200{% endif %}
+                    {% if status.status == 'doublon' %}bg-gray-50 border border-gray-200{% endif %}
+                    {% if status.status == 'non_affectee' %}bg-yellow-50 border border-yellow-200{% endif %}">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full mr-3
+                            {% if status.status == 'affectee' %}bg-blue-500{% endif %}
+                            {% if status.status == 'doublon' %}bg-gray-500{% endif %}
+                            {% if status.status == 'non_affectee' %}bg-yellow-500{% endif %}">
+                        </div>
+                        <span class="font-medium text-gray-700">{{ status.label }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-2xl font-bold
+                            {% if status.status == 'affectee' %}text-blue-600{% endif %}
+                            {% if status.status == 'doublon' %}text-gray-600{% endif %}
+                            {% if status.status == 'non_affectee' %}text-yellow-600{% endif %}">
+                            {{ status.count }}
+                        </span>
+                        <span class="ml-2 px-2 py-1 text-xs font-medium rounded-full
+                            {% if status.status == 'affectee' %}bg-blue-100 text-blue-700{% endif %}
+                            {% if status.status == 'doublon' %}bg-gray-100 text-gray-700{% endif %}
+                            {% if status.status == 'non_affectee' %}bg-yellow-100 text-yellow-700{% endif %}">
+                            {{ status.count }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Performance des opérateurs -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Performance des opérateurs</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-sm font-medium text-gray-500 border-b">
+                            <th class="pb-3">Opérateur</th>
+                            <th class="pb-3 text-center">Confirmées</th>
+                            <th class="pb-3 text-center">Total</th>
+                            <th class="pb-3 text-center">Taux</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        {% for operator in operators_stats %}
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="py-3">
+                                <div class="font-medium text-gray-900">{{ operator.username }}</div>
+                            </td>
+                            <td class="py-3 text-center">
+                                <span class="font-medium text-green-600">{{ operator.confirmed_orders }}</span>
+                            </td>
+                            <td class="py-3 text-center">
+                                <span class="font-medium text-gray-900">{{ operator.total_orders }}</span>
+                            </td>
+                            <td class="py-3 text-center">
+                                <div class="flex items-center justify-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="h-2 rounded-full 
+                                            {% if operator.confirmation_rate >= 80 %}bg-green-500{% elif operator.confirmation_rate >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}" 
+                                            style="width: {{ operator.confirmation_rate }}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-medium
+                                        {% if operator.confirmation_rate >= 80 %}text-green-600{% elif operator.confirmation_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                        {{ operator.confirmation_rate }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="py-6 text-center text-gray-500">Aucun opérateur actif</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section graphiques statistiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Graphique nombre de commandes -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Nombre de commandes</h3>
+                <select class="text-xs border border-gray-300 rounded px-2 py-1" id="ordersCountChartPeriod">
+                    <option value="daily">Journalier</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="monthly">Mensuel</option>
+                </select>
+            </div>
+            <div class="relative" style="height: 300px;">
+                <canvas id="ordersCountChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graphique valeur des commandes -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Valeur des commandes</h3>
+                <select class="text-xs border border-gray-300 rounded px-2 py-1" id="ordersValueChartPeriod">
+                    <option value="daily">Journalier</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="monthly">Mensuel</option>
+                </select>
+            </div>
+            <div class="relative" style="height: 300px;">
+                <canvas id="ordersValueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graphique nombre d'articles -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Nombre d'articles</h3>
+                <select class="text-xs border border-gray-300 rounded px-2 py-1" id="articlesChartPeriod">
+                    <option value="daily">Journalier</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="monthly">Mensuel</option>
+                </select>
+            </div>
+            <div class="relative" style="height: 300px;">
+                <canvas id="articlesCountChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dernières activités -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-800">Dernières activités</h2>
+            </div>
+        </div>
+        
+        <!-- Contenu des activités -->
+        <div id="activities-content" class="divide-y divide-gray-100">
+            {% include "order_management/includes/activities_content.html" with grouped_activities=grouped_activities %}
+        </div>
+
+        <!-- Pagination -->
+        <div id="activities-pagination" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+                <button id="prev-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Précédent
+                </button>
+                <button id="next-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Suivant
+                </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700" id="pagination-info">
+                        Affichage de <span class="font-medium">1</span> à <span class="font-medium">5</span> sur <span class="font-medium">{{ activities_paginator.count }}</span> activités
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination" id="pagination-controls">
+                        <!-- Les contrôles de pagination seront générés par JavaScript -->
+                    </nav>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Loading indicator -->
+<div id="activities-loading" class="hidden fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-4 flex items-center space-x-3">
+        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+        <span class="text-gray-700">Chargement...</span>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentPage = 1;
+    let totalPages = {{ activities_paginator.num_pages }};
+    let totalCount = {{ activities_paginator.count }};
+    
+    const activitiesContent = document.getElementById('activities-content');
+    const loadingIndicator = document.getElementById('activities-loading');
+    
+    // Éléments mobile
+    const prevMobile = document.getElementById('prev-mobile');
+    const nextMobile = document.getElementById('next-mobile');
+    
+    // Éléments desktop
+    const prevDesktop = document.getElementById('prev-desktop');
+    const nextDesktop = document.getElementById('next-desktop');
+    const pageNumbers = document.getElementById('page-numbers');
+    const startIndex = document.getElementById('start-index');
+    const endIndex = document.getElementById('end-index');
+    const totalCountSpan = document.getElementById('total-count');
+    
+    function updatePagination(data) {
+        currentPage = data.current_page;
+        totalPages = data.total_pages;
+        totalCount = data.total_activities;
+        
+        // Mise à jour des boutons mobile
+        prevMobile.disabled = !data.has_previous;
+        nextMobile.disabled = !data.has_next;
+        
+        // Mise à jour des boutons desktop
+        prevDesktop.disabled = !data.has_previous;
+        nextDesktop.disabled = !data.has_next;
+        
+        // Mise à jour des informations de pagination
+        const start = ((currentPage - 1) * 5) + 1;
+        const end = Math.min(currentPage * 5, totalCount);
+        
+        startIndex.textContent = start;
+        endIndex.textContent = end;
+        totalCountSpan.textContent = totalCount;
+        
+        // Mise à jour des numéros de page
+        updatePageNumbers();
+    }
+    
+    function updatePageNumbers() {
+        pageNumbers.innerHTML = '';
+        
+        // Afficher les numéros de page (3 pages avant et après la page actuelle)
+        const startPage = Math.max(1, currentPage - 3);
+        const endPage = Math.min(totalPages, currentPage + 3);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                // Page actuelle
+                const span = document.createElement('span');
+                span.className = 'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-700';
+                span.textContent = i;
+                pageNumbers.appendChild(span);
+            } else {
+                // Autres pages
+                const button = document.createElement('button');
+                button.className = 'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50';
+                button.textContent = i;
+                button.addEventListener('click', () => loadPage(i));
+                pageNumbers.appendChild(button);
+            }
+        }
+    }
+    
+    function loadPage(page) {
+        loadingIndicator.classList.remove('hidden');
+        
+        fetch(`{% url 'activities_ajax' %}?page=${page}`)
+            .then(response => response.json())
+            .then(data => {
+                activitiesContent.innerHTML = data.html;
+                updatePagination(data);
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des activités:', error);
+            })
+            .finally(() => {
+                loadingIndicator.classList.add('hidden');
+            });
+    }
+    
+    // Event listeners pour les boutons mobiles
+    prevMobile.addEventListener('click', function() {
+        if (currentPage > 1) {
+            loadPage(currentPage - 1);
+        }
+    });
+    
+    nextMobile.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+            loadPage(currentPage + 1);
+        }
+    });
+    
+    // Event listeners pour les boutons desktop
+    prevDesktop.addEventListener('click', function() {
+        if (currentPage > 1) {
+            loadPage(currentPage - 1);
+        }
+    });
+    
+    nextDesktop.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+            loadPage(currentPage + 1);
+        }
+    });
+    
+    // Initialiser l'affichage des numéros de page
+    updatePageNumbers();
+    
+    // Masquer la pagination si une seule page
+    if (totalPages <= 1) {
+        document.getElementById('activities-pagination').style.display = 'none';
+    }
+});
+</script>
 {% endblock %} 

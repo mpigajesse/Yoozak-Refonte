@@ -1,0 +1,49 @@
+{% if grouped_activities.today %}
+<!-- Aujourd'hui -->
+<div class="px-6 py-3 bg-gray-50">
+    <h3 class="text-sm font-medium text-gray-500">Aujourd'hui</h3>
+</div>
+{% for activity in grouped_activities.today %}
+    {% include "order_management/includes/activity_item.html" with activity=activity %}
+{% endfor %}
+{% endif %}
+
+{% if grouped_activities.yesterday %}
+<!-- Hier -->
+<div class="px-6 py-3 bg-gray-50">
+    <h3 class="text-sm font-medium text-gray-500">Hier</h3>
+</div>
+{% for activity in grouped_activities.yesterday %}
+    {% include "order_management/includes/activity_item.html" with activity=activity %}
+{% endfor %}
+{% endif %}
+
+{% if grouped_activities.this_week %}
+<!-- Cette semaine -->
+<div class="px-6 py-3 bg-gray-50">
+    <h3 class="text-sm font-medium text-gray-500">Cette semaine</h3>
+</div>
+{% for activity in grouped_activities.this_week %}
+    {% include "order_management/includes/activity_item.html" with activity=activity %}
+{% endfor %}
+{% endif %}
+
+{% if grouped_activities.older %}
+<!-- Plus ancien -->
+<div class="px-6 py-3 bg-gray-50">
+    <h3 class="text-sm font-medium text-gray-500">Plus ancien</h3>
+</div>
+{% for activity in grouped_activities.older %}
+    {% include "order_management/includes/activity_item.html" with activity=activity %}
+{% endfor %}
+{% endif %}
+
+{% if not grouped_activities.today and not grouped_activities.yesterday and not grouped_activities.this_week and not grouped_activities.older %}
+<div class="p-6 text-center">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune activité récente</h3>
+    <p class="mt-1 text-sm text-gray-500">Commencez par créer une nouvelle commande ou mettre à jour le stock.</p>
+</div>
+{% endif %} 

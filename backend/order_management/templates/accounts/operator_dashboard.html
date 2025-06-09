@@ -1,92 +1,251 @@
 {% extends 'base.html' %}
 
-{% block title %}Tableau de bord opérateur{% endblock %}
+{% block title %}Tableau de bord opérateur - Yoozak{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <h1 class="mb-4">Tableau de bord opérateur</h1>
-    
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Mes commandes à traiter</h5>
+                <!-- En-tête de bienvenue -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+                    <p class="text-gray-600 mt-2">{{ current_date|date:"l d F Y" }} - Aperçu de vos activités</p>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>N° Commande</th>
-                                    <th>Client</th>
-                                    <th>Téléphone</th>
-                                    <th>Produit</th>
-                                    <th>Prix</th>
-                                    <th>Statut</th>
-                                    <th>Date création</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for order in orders %}
-                                <tr>
-                                    <td>{{ order.order_number }}</td>
-                                    <td>{{ order.client_name }}</td>
-                                    <td>{{ order.phone }}</td>
-                                    <td>{{ order.product }}</td>
-                                    <td>{{ order.price }} DH</td>
-                                    <td>
-                                        {% if order.status == 'affectee' %}
-                                            <span class="badge bg-info">Affectée</span>
-                                        {% elif order.status == 'a_confirmer' %}
-                                            <span class="badge bg-primary">À confirmer</span>
-                                        {% elif order.status == 'en_cours_confirmation' %}
-                                            <span class="badge bg-warning">En cours</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ order.creation_date|date:"d/m/Y H:i" }}</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'orders:order_confirm' order.yoozak_id %}" class="btn btn-sm btn-success">
-                                                <i class="bi bi-check-circle"></i> Confirmer
-                                            </a>
-                                            <a href="{% url 'orders:order_edit' order.yoozak_id %}" class="btn btn-sm btn-primary">
-                                                <i class="bi bi-pencil"></i> Modifier
-                                            </a>
+
+                <!-- Statistiques principales -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Commandes en attente -->
+                    <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="bg-blue-100 p-3 rounded-xl">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Commandes en attente</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ pending_orders_count }}</p>
+                                <p class="text-xs text-gray-500">À traiter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Traitées aujourd'hui -->
+                    <div class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-green-100">
+                        <div class="flex items-center">
+                            <div class="bg-green-100 p-3 rounded-xl">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Traitées aujourd'hui</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ today_processed_count }}</p>
+                                <p class="text-xs text-gray-500">/ {{ daily_target }} objectif</p>
+                            </div>
+                        </div>
+                        <!-- Barre de progression -->
+                        <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500 rounded-full" style="width: {{ daily_progress }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Taux de confirmation -->
+                    <div class="bg-gradient-to-br from-purple-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-purple-100">
+                        <div class="flex items-center">
+                            <div class="bg-purple-100 p-3 rounded-xl">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Taux de confirmation</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ confirmation_rate }}%</p>
+                                <p class="text-xs text-gray-500">Personnel</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cette semaine -->
+                    <div class="bg-gradient-to-br from-amber-50 to-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-amber-100">
+                        <div class="flex items-center">
+                            <div class="bg-amber-100 p-3 rounded-xl">
+                                <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Cette semaine</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ week_processed }}</p>
+                                <p class="text-xs text-gray-500">Commandes traitées</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenu principal -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Commandes à traiter -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-xl font-semibold text-gray-900">Commandes à traiter</h2>
+                                    <a href="{% url 'orders:operator_orders' %}" 
+                                       class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                        Voir toutes
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="divide-y divide-gray-200">
+                                {% for order in recent_orders %}
+                                <div class="p-6 hover:bg-gray-50 transition-colors duration-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center">
+                                                <h3 class="text-sm font-semibold text-gray-900">{{ order.order_number }}</h3>
+                                                <span class="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-600">{{ order.client_name }}</p>
+                                            <p class="text-xs text-gray-500">{{ order.phone }}</p>
                                         </div>
-                                    </td>
-                                </tr>
+                                        <div class="text-right">
+                                            <p class="text-sm font-semibold text-gray-900">{{ order.price }} DH</p>
+                                            <p class="text-xs text-gray-500">{{ order.creation_date|date:"d/m/Y H:i" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 flex space-x-2">
+                                        {% if order.yoozak_id %}
+                                        <a href="{% url 'orders:order_detail' order.yoozak_id %}" 
+                                           class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                            Voir détails
+                                        </a>
+                                        {% else %}
+                                        <span class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">
+                                            Détails indisponibles
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
                                 {% empty %}
-                                <tr>
-                                    <td colspan="8" class="text-center">Aucune commande à traiter</td>
-                                </tr>
+                                <div class="p-12 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune commande à traiter</h3>
+                                    <p class="mt-1 text-sm text-gray-500">Toutes vos commandes ont été traitées. Bon travail ! 🎉</p>
+                                </div>
                                 {% endfor %}
-                            </tbody>
-                        </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activités récentes et progression -->
+                    <div class="space-y-6">
+                        <!-- Activités récentes -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <h2 class="text-xl font-semibold text-gray-900">Activités récentes</h2>
+                            </div>
+                            <div class="p-6">
+                                {% for activity in recent_activities %}
+                                <div class="mb-4 last:mb-0 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            {% if activity.status == 'confirmee' %}
+                                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </div>
+                                            {% else %}
+                                            <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-3 flex-1">
+                                            <p class="text-sm font-medium text-gray-900">{{ activity.description }}</p>
+                                            <p class="text-xs text-gray-600">{{ activity.reference }} - {{ activity.client }}</p>
+                                            <p class="text-xs text-gray-500">{{ activity.timestamp|date:"d/m/Y H:i" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-8">
+                                    <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <p class="mt-2 text-sm text-gray-500">Aucune activité récente</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Progression journalière -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <h2 class="text-xl font-semibold text-gray-900">Progression du jour</h2>
+                            </div>
+                            <div class="p-6">
+                                <div class="text-center">
+                                    <div class="relative w-24 h-24 mx-auto">
+                                        <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" r="40" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
+                                            <circle cx="50" cy="50" r="40" stroke="#3b82f6" stroke-width="8" fill="none" 
+                                                    stroke-dasharray="{{ daily_progress|floatformat:0 }}, 100"
+                                                    stroke-linecap="round"
+                                                    class="transition-all duration-500 ease-out"></circle>
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-lg font-bold text-gray-900">{{ daily_progress|floatformat:0 }}%</span>
+                                        </div>
+                                    </div>
+                                    <p class="mt-4 text-sm text-gray-600">{{ today_processed_count }} / {{ daily_target }} commandes</p>
+                                    <p class="text-xs text-gray-500">Objectif quotidien</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Actions rapides</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'orders:operator_orders' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-list-check"></i> Voir toutes mes commandes
-                        </a>
-                        <a href="{% url 'orders:check_stock' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-search"></i> Consulter le stock
-                        </a>
+        <!-- Actions rapides -->
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Actions rapides</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{% url 'orders:operator_orders' %}" 
+                   class="flex items-center p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200">
+                    <svg class="w-8 h-8 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <div>
+                        <h3 class="font-medium text-blue-900">Voir toutes mes commandes</h3>
+                        <p class="text-sm text-blue-700">Gérer toutes les commandes assignées</p>
                     </div>
-                </div>
+                </a>
+                
+                <a href="{% url 'inventory:stock_list' %}" 
+                   class="flex items-center p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors duration-200">
+                    <svg class="w-8 h-8 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <div>
+                        <h3 class="font-medium text-green-900">Consulter le stock</h3>
+                        <p class="text-sm text-green-700">Vérifier la disponibilité des produits</p>
+                    </div>
+                </a>
+                
+                <a href="{% url 'orders:operator_orders' %}?status=affectee" 
+                   class="flex items-center p-4 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors duration-200">
+                    <svg class="w-8 h-8 text-amber-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <h3 class="font-medium text-amber-900">Commandes urgentes</h3>
+                        <p class="text-sm text-amber-700">Traiter les commandes en attente</p>
+                    </div>
+                </a>
             </div>
         </div>
-    </div>
-</div>
-{% endblock %}
+{% endblock %} 

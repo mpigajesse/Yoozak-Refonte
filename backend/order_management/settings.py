@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",  # Pour la déconnexion
     "drf_yasg",
     "django_filters",
+    "django_browser_reload",
+    "widget_tweaks",
     
     # Applications personnalisées
     'accounts',
@@ -43,11 +45,21 @@ INSTALLED_APPS = [
     'sync',
     'logistics',
     'client',
+    
+    # Tailwind
+    'tailwind',
+    'theme',
+]
+
+TAILWIND_APP_NAME = 'theme'
+INTERNAL_IPS = [
+    "127.0.0.1",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "django_browser_reload.middleware.BrowserReloadMiddleware",
     'corsheaders.middleware.CorsMiddleware',  # CORS middleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -129,7 +141,16 @@ ROOT_URLCONF = 'order_management.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'order_management', 'templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'order_management', 'templates'),
+            os.path.join(BASE_DIR, 'theme', 'templates'),
+            os.path.join(BASE_DIR, 'accounts', 'templates'),
+            os.path.join(BASE_DIR, 'orders', 'templates'),
+            os.path.join(BASE_DIR, 'inventory', 'templates'),
+            os.path.join(BASE_DIR, 'sync', 'templates'),
+            os.path.join(BASE_DIR, 'logistics', 'templates'),
+            os.path.join(BASE_DIR, 'client', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -221,3 +242,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+# Configuration Tailwind CSS
+TAILWIND_APP_NAME = 'theme'
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
+NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd"  # Chemin vers l'exécutable npm

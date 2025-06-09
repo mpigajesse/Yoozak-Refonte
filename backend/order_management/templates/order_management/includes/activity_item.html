@@ -1,0 +1,61 @@
+<div class="p-4 hover:bg-gray-50 transition-colors duration-150">
+    <div class="flex items-center space-x-4">
+        <!-- Icône -->
+        <div class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center {% if activity.type == 'order' %}bg-blue-100{% elif activity.type == 'inventory' %}bg-green-100{% else %}bg-gray-100{% endif %}">
+                {% if activity.type == 'order' %}
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                {% elif activity.type == 'inventory' %}
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                {% else %}
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Contenu -->
+        <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-900">
+                    <a href="{{ activity.url }}" class="hover:text-blue-600 transition-colors duration-150">
+                        {{ activity.reference }}
+                    </a>
+                </p>
+                <div class="text-xs text-gray-500">
+                    {{ activity.timestamp|time:"H:i" }}
+                </div>
+            </div>
+            <div class="mt-0.5 flex items-center space-x-2">
+                <p class="text-sm text-gray-500">{{ activity.description }}</p>
+                {% if activity.type == 'order' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {% if activity.status == 'confirmee' %}bg-green-100 text-green-800{% elif activity.status == 'en_cours' %}bg-yellow-100 text-yellow-800{% elif activity.status == 'annulee' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ activity.client }}
+                    </span>
+                    <span class="text-sm font-medium text-gray-900">{{ activity.price|floatformat:2 }} €</span>
+                {% elif activity.type == 'inventory' %}
+                    {% if activity.color or activity.size %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                        {{ activity.color }}{% if activity.color and activity.size %} - {% endif %}{{ activity.size }}
+                    </span>
+                    {% endif %}
+                    <span class="text-sm font-medium text-gray-900">Stock: {{ activity.quantity }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Flèche -->
+        <div class="flex-shrink-0">
+            <a href="{{ activity.url }}" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+</div> 
