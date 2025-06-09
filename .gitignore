@@ -1,3 +1,6 @@
+# Exclusion complète du backend pour la branche dev
+backend/
+
 # Python
 __pycache__/
 *.py[cod]
