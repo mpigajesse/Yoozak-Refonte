@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animations personnalisées */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Animation pour le défilement infini */
+@keyframes scroll {
+  0% { transform: translateX(calc(var(--scroll-direction, -1) * 0)); }
+  100% { transform: translateX(calc(var(--scroll-direction, -1) * -50%)); }
+}
+
+/* Styles pour la vue en liste et en grille */
+.list-view-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.list-view-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+.list-view-exit {
+  opacity: 1;
+}
+.list-view-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.grid-view-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+.grid-view-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 300ms, transform 300ms;
+}
+.grid-view-exit {
+  opacity: 1;
+}
+.grid-view-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* Styles globaux */
+body {
+  @apply antialiased;
+}
+
+/* Amélioration des transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Amélioration du défilement */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Style des barres de défilement */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+@layer base {
+  html {
+    font-family: 'Ladoga', 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Ladoga', 'Inter', sans-serif;
+    font-weight: 600;
+  }
+}
+
+@layer components {
+  /* Styles communs pour les cartes de produits */
+  .product-card {
+    @apply bg-white rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg;
+  }
+  
+  /* Styles pour les boutons de filtre actifs */
+  .filter-btn-active {
+    @apply bg-black text-white;
+  }
+  
+  /* Style pour les badges de promotions */
+  .promo-badge {
+    @apply absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full;
+  }
+  
+  /* Style pour les badges de nouveautés */
+  .new-badge {
+    @apply absolute top-2 left-2 bg-black text-white text-xs px-2 py-1 rounded-full;
+  }
+}
