@@ -94,6 +94,7 @@ htmlcov/
 *.db
 *.sql
 *.dump
+db.sqlite3
 
 # Fichiers de log et monitoring
 logs/
