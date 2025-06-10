@@ -56,6 +56,7 @@ urlpatterns = [
     # URLs des APIs REST
     path('api/client/', include('client.API.urls')),
     path('api/inventory/', include('inventory.API.urls')),
+    path('api/orders/', include('orders.API.urls')),
     
     # Django Browser Reload
     path("__reload__/", include("django_browser_reload.urls")),

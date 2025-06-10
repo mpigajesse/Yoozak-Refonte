@@ -44,7 +44,15 @@
                             <div class="text-gray-500">{{ order.phone }}</div>
                             </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <div>{{ order.product }} (x{{ order.quantity }})</div>
+                            <div>
+                                {% if order.get_products_display != "Aucun produit" %}
+                                    {{ order.get_products_display }}
+                                {% elif order.product %}
+                                    {{ order.product|truncatechars:35 }}
+                                {% else %}
+                                    <span class="text-gray-400">Aucun produit</span>
+                                {% endif %}
+                            </div>
                             <div class="font-bold text-blue-600">{{ order.price }} DH</div>
                             </td>
                         <td class="px-6 py-4 whitespace-nowrap">

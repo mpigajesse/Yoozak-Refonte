@@ -56,7 +56,15 @@
                                     <td>{{ order.phone }}</td>
                                     <td>{{ order.address }}</td>
                                     <td>{{ order.city }}</td>
-                                    <td>{{ order.product }}</td>
+                                    <td>
+                                        {% if order.get_products_display != "Aucun produit" %}
+                                            {{ order.get_products_display }}
+                                        {% elif order.product %}
+                                            {{ order.product|truncatechars:25 }}
+                                        {% else %}
+                                            <span class="text-muted">Aucun produit</span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ order.price }} DH</td>
                                     <td>{{ order.confirmation_date|date:"d/m/Y H:i" }}</td>
                                     <td>

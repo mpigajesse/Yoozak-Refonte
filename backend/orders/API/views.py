@@ -25,16 +25,11 @@ class CreateOrderAPIView(generics.CreateAPIView):
                 
                 # Retourner les détails de la commande créée
                 response_serializer = OrderDetailSerializer(order)
-                return Response({
-                    'success': True,
-                    'message': 'Commande créée avec succès',
-                    'order': response_serializer.data
-                }, status=status.HTTP_201_CREATED)
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
             return Response({
-                'success': False,
-                'message': f'Erreur lors de la création de la commande: {str(e)}'
+                'error': f'Erreur lors de la création de la commande: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
 

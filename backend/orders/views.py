@@ -245,8 +245,9 @@ def order_list(request):
             models.Q(client_name__icontains=search_query) |
             models.Q(phone__icontains=search_query) |
             models.Q(city__icontains=search_query) |
-            models.Q(product__icontains=search_query)
-        )
+            models.Q(articles__product__name__icontains=search_query) |
+            models.Q(articles__product__reference__icontains=search_query)
+        ).distinct()
     
     # Pagination
     paginator = Paginator(orders, 10)  # 10 commandes par page

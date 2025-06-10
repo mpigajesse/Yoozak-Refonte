@@ -26,15 +26,10 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = [
         'order_number',
         'client_name',
-        'phone',
-        'city',
-        'order_date',
+        'get_products_display',
         'status',
-        'payment_status',
-        'delivery_status',
         'operator',
-        'get_total_articles',
-        'price'
+        'creation_date'
     ]
     
     list_filter = [
@@ -103,9 +98,14 @@ class OrderAdmin(admin.ModelAdmin):
     
     def get_readonly_fields(self, request, obj=None):
         if obj:  # Si on modifie un objet existant
-            return self.readonly_fields + ('order_number', 'yoozak_id')
+            return self.readonly_fields + ['order_number', 'yoozak_id']
         return self.readonly_fields
 
     def get_total_articles(self, obj):
         return sum(article.quantity for article in obj.articles.all())
     get_total_articles.short_description = "Total articles"
+    
+    def get_products_display(self, obj):
+        """Affiche les produits de la commande"""
+        return obj.get_products_display()
+    get_products_display.short_description = "PRODUIT"

@@ -249,7 +249,15 @@
                                 <tr>
                                     <td>{{ order.order_number }}</td>
                                     <td>{{ order.client_name }}</td>
-                                    <td>{{ order.product }}</td>
+                                    <td>
+                                        {% if order.get_products_display != "Aucun produit" %}
+                                            {{ order.get_products_display }}
+                                        {% elif order.product %}
+                                            {{ order.product|truncatechars:30 }}
+                                        {% else %}
+                                            <span class="text-muted">Aucun produit</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <span class="badge {% if order.status == 'non_affectee' %}bg-warning{% elif order.status == 'affectee' %}bg-info{% elif order.status == 'erronee' %}bg-danger{% elif order.status == 'doublon' %}bg-secondary{% elif order.status == 'a_confirmer' %}bg-primary{% elif order.status == 'en_cours_confirmation' %}bg-info{% elif order.status == 'confirmee' %}bg-success{% elif order.status == 'annulee' %}bg-danger{% endif %}">
                                             {% if order.status == 'non_affectee' %}

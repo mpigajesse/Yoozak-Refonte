@@ -49,7 +49,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code produit</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pointure</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Couleur (arabe)</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Couleur (français)</th>
@@ -61,10 +61,19 @@
                             <tbody class="divide-y divide-gray-200">
                                 {% for article in order.articles.all %}
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{{ article.product_code }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600">{{ article.size }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600">{{ article.color_ar }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600">{{ article.color_fr }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                                        {% if article.product %}
+                                            {{ article.product.name }}
+                                            <br><span class="text-xs text-gray-500">{{ article.product.reference }}</span>
+                                        {% elif article.product_code %}
+                                            {{ article.product_code }}
+                                        {% else %}
+                                            <span class="text-gray-400">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-gray-600">{{ article.size|default:"-" }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-600">{{ article.color_ar|default:"-" }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-600">{{ article.color_fr|default:"-" }}</td>
                                     <td class="px-4 py-3 text-center text-sm text-gray-600">{{ article.quantity }}</td>
                                     <td class="px-4 py-3 text-right text-sm text-gray-600">{{ article.price|floatformat:2 }} DH</td>
                                     <td class="px-4 py-3 text-right text-sm font-semibold text-gray-800">{{ article.get_total_price|floatformat:2 }} DH</td>
@@ -72,7 +81,11 @@
                                 {% empty %}
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800" colspan="7">
-                                        {{ order.product|default:"-" }} ({{ order.quantity }})
+                                        {% if order.product %}
+                                            {{ order.product }} ({{ order.quantity }})
+                                        {% else %}
+                                            <span class="text-gray-400">Aucun article</span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}

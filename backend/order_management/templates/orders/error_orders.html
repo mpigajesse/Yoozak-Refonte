@@ -91,7 +91,13 @@
                             {{ order.ville.name }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ order.product }}
+                            {% if order.get_products_display != "Aucun produit" %}
+                                {{ order.get_products_display }}
+                            {% elif order.product %}
+                                {{ order.product|truncatechars:30 }}
+                            {% else %}
+                                <span class="text-gray-400">Aucun produit</span>
+                            {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             {{ order.quantity }}

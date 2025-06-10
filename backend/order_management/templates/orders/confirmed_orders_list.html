@@ -42,7 +42,13 @@
                                     {% elif col.0 == 'city' %}
                                         {{ order.city|default:"-" }}
                                     {% elif col.0 == 'product' %}
-                                        {{ order.product }}
+                                        {% if order.get_products_display != "Aucun produit" %}
+                                            {{ order.get_products_display }}
+                                        {% elif order.product %}
+                                            {{ order.product|truncatechars:35 }}
+                                        {% else %}
+                                            <span class="text-muted">Aucun produit</span>
+                                        {% endif %}
                                     {% elif col.0 == 'quantity' %}
                                         {{ order.quantity }}
                                     {% elif col.0 == 'price' %}

@@ -56,7 +56,15 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.client_name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.phone }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.city }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.product|truncatechars:30 }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {% if order.get_products_display != "Aucun produit" %}
+                                        {{ order.get_products_display|truncatechars:30 }}
+                                    {% elif order.product %}
+                                        {{ order.product|truncatechars:30 }}
+                                    {% else %}
+                                        <span class="text-gray-400">Aucun produit</span>
+                                    {% endif %}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right">{{ order.price|floatformat:2 }} DH</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.creation_date|date:"d/m/Y" }}</td>
                             </tr>

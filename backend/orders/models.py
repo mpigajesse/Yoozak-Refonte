@@ -150,15 +150,47 @@ class Order(models.Model):
         if payment_date:
             self.payment_date = payment_date
         self.save()
+    
+    def get_products_display(self):
+        """Retourne une chaîne avec tous les produits de la commande"""
+        articles = self.articles.all()
+        
+        # Cas 1: Nouvelles commandes avec articles liés à des produits
+        if articles:
+            products = []
+            for article in articles:
+                if article.product:
+                    # Article avec produit lié (nouvelles commandes)
+                    product_str = f"{article.product.name}"
+                    if article.quantity > 1:
+                        product_str += f" (x{article.quantity})"
+                    products.append(product_str)
+                elif article.product_code:
+                    # Article avec seulement le code produit (anciennes commandes migrées)
+                    product_str = f"{article.product_code}"
+                    if article.quantity > 1:
+                        product_str += f" (x{article.quantity})"
+                    products.append(product_str)
+            
+            if products:
+                return " / ".join(products)
+        
+        # Cas 2: Fallback sur l'ancien champ product (très anciennes commandes)
+        if self.product:
+            return self.product
+        
+        # Cas 3: Aucun produit trouvé
+        return "Aucun produit"
+    get_products_display.short_description = "Produits"
 
 class ArticleCommande(models.Model):
     """Modèle pour les articles d'une commande"""
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='articles', verbose_name="Commande")
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='order_items', verbose_name="Produit")
     product_code = models.CharField(max_length=100, verbose_name="Code produit", blank=True)  # Maintenu pour compatibilité
-    size = models.CharField(max_length=20, verbose_name="Pointure")
-    color_ar = models.CharField(max_length=50, verbose_name="Couleur (arabe)")
-    color_fr = models.CharField(max_length=50, verbose_name="Couleur (français)")
+    size = models.CharField(max_length=20, verbose_name="Pointure", blank=True, null=True)
+    color_ar = models.CharField(max_length=50, verbose_name="Couleur (arabe)", blank=True, null=True)
+    color_fr = models.CharField(max_length=50, verbose_name="Couleur (français)", blank=True, null=True)
     quantity = models.IntegerField(default=1, verbose_name="Quantité")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Prix unitaire")
     created_at = models.DateTimeField(auto_now_add=True)

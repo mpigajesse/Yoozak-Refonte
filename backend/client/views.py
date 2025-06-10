@@ -64,7 +64,7 @@ def clients_list(request):
     clients = clients.order_by(sort_by)
     
     # Pagination
-    paginator = Paginator(clients, 20)  # 20 clients par page
+    paginator = Paginator(clients, 10)  # 10 clients par page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -82,6 +82,8 @@ def clients_list(request):
     context = {
         'page_obj': page_obj,
         'clients': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'paginator': paginator,
         'search_query': search_query,
         'status_filter': status_filter,
         'date_filter': date_filter,
