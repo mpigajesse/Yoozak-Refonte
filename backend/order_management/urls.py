@@ -51,6 +51,7 @@ urlpatterns = [
     path('orders/', include('orders.urls')),
     path('inventory/', include('inventory.urls')),
     path('sync/', include('sync.urls')),
+    path('client/', include('client.urls')),
     
     # URLs des APIs REST
     path('api/client/', include('client.API.urls')),

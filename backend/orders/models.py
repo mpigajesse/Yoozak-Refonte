@@ -71,6 +71,7 @@ class Order(models.Model):
     # Relations
     operator = models.ForeignKey(Operator, on_delete=models.SET_NULL, null=True, related_name='orders', verbose_name="Opérateur")
     confirmation_agent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='confirmed_orders', verbose_name="Agent confirmation")
+    client = models.ForeignKey('client.Client', on_delete=models.SET_NULL, null=True, blank=True, related_name='client_orders', verbose_name="Client")
     
     # Paiement
     remaining_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Reste à payer")
@@ -95,12 +96,12 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         # Générer le numéro de commande s'il n'existe pas
         if not self.order_number:
-            last_order = Order.objects.order_by('-id').first()
+            last_order = Order.objects.order_by('-yoozak_id').first()
             if last_order:
-                last_number = int(last_order.order_number.split('-')[-1])
-                self.order_number = f"CMD-{str(last_number + 1).zfill(6)}"
+                next_number = last_order.yoozak_id + 1
             else:
-                self.order_number = "CMD-000001"
+                next_number = 1
+            self.order_number = f"YZ-CMD-{str(next_number).zfill(4)}"
         
         # Calculer le prix total à partir des articles
         if not self.pk:  # Nouvelle commande

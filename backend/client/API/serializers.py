@@ -18,7 +18,7 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ('id', 'user', 'phone', 'address', 'company_name', 'created_at', 
+        fields = ('id', 'user', 'phone', 'address', 'created_at', 
                  'email', 'username', 'password', 'first_name', 'last_name')
         read_only_fields = ('id', 'created_at')
 
@@ -42,7 +42,7 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ('phone', 'address', 'company_name', 'first_name', 'last_name', 'email')
+        fields = ('phone', 'address', 'first_name', 'last_name', 'email')
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})

@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 app_name = 'orders'
@@ -41,4 +41,7 @@ urlpatterns = [
     path('add-article/<int:order_id>/', views.add_article, name='add_article'),
     path('delete-article/<int:article_id>/', views.delete_article, name='delete_article'),
     path('update-article-quantity/<int:article_id>/', views.update_article_quantity, name='update_article_quantity'),
+    
+    # API Routes
+    path('api/', include('orders.API.urls')),
 ]

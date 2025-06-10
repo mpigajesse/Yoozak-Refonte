@@ -17,6 +17,7 @@ import BlogPage from './pages/BlogPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import TrackOrderPage from './pages/TrackOrderPage';
 import Footer from './components/Footer';
 import CartSidebar from './components/CartSidebar';
 import { CartProvider } from './context/CartContext';
@@ -295,7 +296,16 @@ function AppContent() {
                 <OrderConfirmationPage />
               </motion.div>
             } />
-
+            <Route path="/track-order" element={
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <TrackOrderPage />
+              </motion.div>
+            } />
 
             {/* Redirection pour les anciennes URL */}
             <Route path="/auth" element={<Navigate to="/login" replace />} />

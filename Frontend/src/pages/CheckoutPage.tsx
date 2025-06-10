@@ -4,17 +4,7 @@ import { ArrowLeft, Truck, Shield, MapPin, User, Mail, Phone } from 'lucide-reac
 import { useCart } from '../context/CartContext';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
-
-interface ShippingInfo {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  country: string;
-}
+import { orderService, ShippingInfo } from '../services/orderService';
 
 const CheckoutPage: React.FC = () => {
   const { cartItems, totalPrice, clearCart } = useCart();
@@ -23,6 +13,7 @@ const CheckoutPage: React.FC = () => {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
@@ -40,21 +31,33 @@ const CheckoutPage: React.FC = () => {
 
   // Pré-remplir le formulaire avec les données de l'utilisateur connecté
   useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      // Utiliser l'adresse par défaut si elle existe
-      const defaultAddress = currentUser.addresses?.find(addr => addr.isDefault);
-      
-      setShippingInfo({
-        firstName: currentUser.firstName || '',
-        lastName: currentUser.lastName || '',
-        email: currentUser.email || '',
-        phone: currentUser.phone || defaultAddress?.phone || '',
-        address: defaultAddress?.address || '',
-        city: defaultAddress?.city || '',
-        postalCode: defaultAddress?.postalCode || '',
-        country: defaultAddress?.country || 'Maroc'
-      });
-    }
+    const loadShippingInfo = async () => {
+      if (isAuthenticated && currentUser) {
+        try {
+          // Essayer de récupérer les infos via l'API
+          const response = await orderService.getShippingInfo();
+          if (response.success) {
+            setShippingInfo(response.shipping_info);
+          }
+        } catch (error) {
+          // Fallback sur les données du currentUser
+          const defaultAddress = currentUser.addresses?.find(addr => addr.isDefault);
+          
+          setShippingInfo({
+            firstName: currentUser.firstName || '',
+            lastName: currentUser.lastName || '',
+            email: currentUser.email || '',
+            phone: currentUser.phone || defaultAddress?.phone || '',
+            address: defaultAddress?.address || '',
+            city: defaultAddress?.city || '',
+            postalCode: defaultAddress?.postalCode || '',
+            country: defaultAddress?.country || 'Maroc'
+          });
+        }
+      }
+    };
+
+    loadShippingInfo();
   }, [isAuthenticated, currentUser]);
 
   const handleShippingSubmit = (e: React.FormEvent) => {
@@ -66,24 +69,37 @@ const CheckoutPage: React.FC = () => {
 
   const handleFinalSubmit = async () => {
     setIsLoading(true);
+    setError(null);
     
-    // Simuler l'envoi de la commande
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Préparer les données de la commande
+      const orderData = orderService.prepareOrderData(
+        shippingInfo,
+        cartItems
+      );
       
-      // Vider le panier
-      clearCart();
+      // Créer la commande via l'API
+      const response = await orderService.createOrder(orderData);
       
-      // Rediriger vers une page de confirmation
-      navigate('/order-confirmation', { 
-        state: { 
-          orderNumber: `YZ-${Date.now()}`,
-          total: finalTotal,
-          estimatedDelivery: '3-5 jours ouvrés'
-        }
-      });
-    } catch (error) {
+      if (response.success) {
+        // Vider le panier
+        clearCart();
+        
+        // Rediriger vers une page de confirmation
+        navigate('/order-confirmation', { 
+          state: { 
+            orderNumber: response.order.order_number,
+            total: finalTotal,
+            estimatedDelivery: '3-5 jours ouvrés',
+            orderDetails: response.order
+          }
+        });
+      } else {
+        throw new Error(response.message || 'Erreur lors de la création de la commande');
+      }
+    } catch (error: any) {
       console.error('Erreur lors de la commande:', error);
+      setError(error.message || 'Une erreur est survenue lors de la commande. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -374,6 +390,19 @@ const CheckoutPage: React.FC = () => {
                   Confirmation de commande
                 </h2>
                 
+                {/* Affichage des erreurs */}
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center">
+                      <span className="text-xl mr-3">⚠️</span>
+                      <div>
+                        <h3 className="font-medium text-red-900">Erreur</h3>
+                        <p className="text-sm text-red-700">{error}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="space-y-6">
                   {/* Shipping Summary */}
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -409,7 +438,14 @@ const CheckoutPage: React.FC = () => {
                       disabled={isLoading}
                       className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
-                      {isLoading ? 'Traitement...' : 'Confirmer la commande'}
+                      {isLoading ? (
+                        <div className="flex items-center justify-center">
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Traitement...
+                        </div>
+                      ) : (
+                        'Confirmer la commande'
+                      )}
                     </button>
                   </div>
                 </div>

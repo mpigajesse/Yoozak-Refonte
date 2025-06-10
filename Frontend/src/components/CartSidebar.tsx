@@ -128,39 +128,41 @@ const CartSidebar: React.FC = () => {
                         {item.product.isSale ? (
                           <span className="flex flex-col items-end">
                             <span className="text-red-500">
-                              {((item.product.price * (1 - item.product.discount! / 100)) * item.quantity).toFixed(2)} dhs
+                              {((parseFloat(item.product.price) * (1 - (item.product.discount || 0) / 100)) * item.quantity).toFixed(2)} dhs
                             </span>
                             <span className="text-sm text-gray-500 line-through">
-                              {(item.product.price * item.quantity).toFixed(2)} dhs
+                              {(parseFloat(item.product.price) * item.quantity).toFixed(2)} dhs
                             </span>
                           </span>
                         ) : (
-                          <span>{(item.product.price * item.quantity).toFixed(2)} dhs</span>
+                          <span>{(parseFloat(item.product.price) * item.quantity).toFixed(2)} dhs</span>
                         )}
                       </p>
                     </div>
                     
                     <div className="mt-1 flex items-center text-sm">
-                      <span className="text-gray-500 capitalize">{item.product.category}</span>
-                      {item.product.color && (
+                      <span className="text-gray-500 capitalize">
+                        {item.product.category?.name || 'Non catégorisé'}
+                      </span>
+                      {(item as any).color && (
                         <>
                           <span className="mx-2 text-gray-400">•</span>
-                          <span className="text-gray-500">{item.product.color}</span>
+                          <span className="text-gray-500">{(item as any).color}</span>
                         </>
                       )}
-                      {item.product.size && (
+                      {(item as any).size && (
                         <>
                           <span className="mx-2 text-gray-400">•</span>
-                          <span className="text-gray-500">Taille {item.product.size[0]}</span>
+                          <span className="text-gray-500">Taille {(item as any).size}</span>
                         </>
                       )}
                     </div>
 
-                    {/* Stock warning */}
-                    {item.product.stock && item.product.stock < 5 && (
+                    {/* Stock warning - utilise le statut de stock du produit */}
+                    {item.product.stock_status === 'low_stock' && (
                       <div className="mt-1 flex items-center text-sm text-orange-500">
                         <AlertTriangle size={14} className="mr-1" />
-                        <span>Plus que {item.product.stock} en stock</span>
+                        <span>Stock faible</span>
                       </div>
                     )}
 
@@ -168,7 +170,7 @@ const CartSidebar: React.FC = () => {
                     <div className="mt-2 flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.product.id.toString(), item.quantity - 1)}
                           disabled={item.quantity <= 1}
                           className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -176,8 +178,8 @@ const CartSidebar: React.FC = () => {
                         </button>
                         <span className="w-8 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          disabled={item.product.stock ? item.quantity >= item.product.stock : false}
+                          onClick={() => updateQuantity(item.product.id.toString(), item.quantity + 1)}
+                          disabled={item.product.stock_status === 'out_of_stock'}
                           className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Plus size={16} />
@@ -185,7 +187,7 @@ const CartSidebar: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() => removeFromCart(item.product.id.toString())}
                         className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                       >
                         <Trash2 size={18} />

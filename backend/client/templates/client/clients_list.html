@@ -1,0 +1,637 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Liste des clients{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header avec titre et boutons -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 flex items-center">
+                        <svg class="h-8 w-8 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                        </svg>
+                        Gestion des clients
+                    </h1>
+                    <p class="text-gray-600 mt-1">Gérez et consultez vos clients</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="refreshStats" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Actualiser
+                    </button>
+                    <button class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Nouveau client
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques principales -->
+    <div class="px-6 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total clients</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="totalClients">{{ stats.total_clients }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Clients actifs</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="activeClients">{{ stats.active_clients }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Clients inactifs</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="inactiveClients">{{ stats.inactive_clients }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Nouveaux (7j)</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="newClients">{{ stats.new_clients_week }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="px-6">
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Filtres et recherche</h3>
+            </div>
+            <div class="px-6 py-4">
+                <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Recherche</label>
+                        <input type="text" name="search" value="{{ request.GET.search }}" 
+                               placeholder="Nom, email, téléphone..." 
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Statut</label>
+                        <select name="status" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="">Tous</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Actifs</option>
+                            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactifs</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Période</label>
+                        <select name="date_filter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="">Toutes</option>
+                            <option value="today" {% if request.GET.date_filter == 'today' %}selected{% endif %}>Aujourd'hui</option>
+                            <option value="week" {% if request.GET.date_filter == 'week' %}selected{% endif %}>Cette semaine</option>
+                            <option value="month" {% if request.GET.date_filter == 'month' %}selected{% endif %}>Ce mois</option>
+                            <option value="year" {% if request.GET.date_filter == 'year' %}selected{% endif %}>Cette année</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button type="submit" class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Filtrer
+                        </button>
+                        <a href="{% url 'client:clients_list' %}" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-center">
+                            Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des clients -->
+    <div class="px-6 py-6">
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Liste des clients ({{ clients|length }})</h3>
+                    <div class="flex items-center space-x-2">
+                        <select id="sortBy" class="border border-gray-300 rounded-md text-sm px-3 py-1">
+                            <option value="nom">Trier par nom</option>
+                            <option value="email">Trier par email</option>
+                            <option value="date_creation">Trier par date</option>
+                            <option value="commandes">Trier par commandes</option>
+                        </select>
+                        
+                        <!-- Bouton pour gérer l'affichage des colonnes -->
+                        <div class="relative">
+                            <button id="columnToggleBtn" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
+                                </svg>
+                                Colonnes
+                            </button>
+                            
+                            <!-- Menu déroulant pour les colonnes -->
+                            <div id="columnToggleMenu" class="hidden absolute right-0 z-10 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg">
+                                <div class="px-4 py-3 border-b border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-900">Affichage des colonnes</h4>
+                                </div>
+                                <div class="px-4 py-2 space-y-2 max-h-64 overflow-y-auto">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="client" checked>
+                                        <span class="ml-2 text-sm">Client</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="first-name">
+                                        <span class="ml-2 text-sm">Prénom</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="last-name">
+                                        <span class="ml-2 text-sm">Nom</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="email" checked>
+                                        <span class="ml-2 text-sm">Email</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="phone" checked>
+                                        <span class="ml-2 text-sm">Téléphone</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="address">
+                                        <span class="ml-2 text-sm">Adresse</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="city">
+                                        <span class="ml-2 text-sm">Ville</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="postal-code">
+                                        <span class="ml-2 text-sm">Code postal</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="country">
+                                        <span class="ml-2 text-sm">Pays</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="type" checked>
+                                        <span class="ml-2 text-sm">Type</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="status" checked>
+                                        <span class="ml-2 text-sm">Statut</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="orders">
+                                        <span class="ml-2 text-sm">Commandes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="created-at">
+                                        <span class="ml-2 text-sm">Date création</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="column-toggle" data-column="actions" checked>
+                                        <span class="ml-2 text-sm">Actions</span>
+                                    </label>
+                                </div>
+                                <div class="px-4 py-3 border-t border-gray-200">
+                                    <button id="resetColumns" class="text-sm text-indigo-600 hover:text-indigo-500">Réinitialiser</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-client">Client</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-first-name" style="display: none;">Prénom</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-last-name" style="display: none;">Nom</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-email">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-phone">Téléphone</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-address" style="display: none;">Adresse</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-city" style="display: none;">Ville</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-postal-code" style="display: none;">Code postal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-country" style="display: none;">Pays</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-type">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-status">Statut</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-orders" style="display: none;">Commandes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-created-at" style="display: none;">Date création</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider column-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for client in clients %}
+                        <tr class="hover:bg-gray-50">
+                            <!-- Client (Avatar + Nom + ID) -->
+                            <td class="px-6 py-4 whitespace-nowrap column-client">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                                            <span class="text-sm font-medium text-white">
+                                                {% if client.first_name %}{{ client.first_name|first|upper }}{% endif %}{% if client.last_name %}{{ client.last_name|first|upper }}{% elif not client.first_name and client.user %}{{ client.user.username|first|upper }}{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ client.display_name }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">ID: #{{ client.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Prénom -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-first-name" style="display: none;">
+                                {{ client.first_name|default:"Non renseigné" }}
+                            </td>
+                            
+                            <!-- Nom -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-last-name" style="display: none;">
+                                {{ client.last_name|default:"Non renseigné" }}
+                            </td>
+                            
+                            <!-- Email -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-email">
+                                <a href="mailto:{{ client.display_email }}" class="text-indigo-600 hover:text-indigo-500">
+                                    {{ client.display_email }}
+                                </a>
+                            </td>
+                            
+                            <!-- Téléphone -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-phone">
+                                {% if client.phone %}
+                                    <a href="tel:{{ client.phone }}" class="text-indigo-600 hover:text-indigo-500">
+                                        {{ client.phone }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-400">Non renseigné</span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Adresse -->
+                            <td class="px-6 py-4 text-sm text-gray-900 column-address" style="display: none;">
+                                <div class="max-w-xs">
+                                    {% if client.address %}
+                                        <div class="truncate" title="{{ client.address }}">{{ client.address|truncatechars:40 }}</div>
+                                    {% else %}
+                                        <span class="text-gray-400">Non renseignée</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            
+                            <!-- Ville -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-city" style="display: none;">
+                                {{ client.city|default:"Non renseigné" }}
+                            </td>
+                            
+                            <!-- Code postal -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-postal-code" style="display: none;">
+                                {{ client.postal_code|default:"Non renseigné" }}
+                            </td>
+                            
+                            <!-- Pays -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-country" style="display: none;">
+                                {{ client.country }}
+                            </td>
+                            
+                            <!-- Type de client -->
+                            <td class="px-6 py-4 whitespace-nowrap column-type">
+                                {% if client.is_guest %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                        <svg class="mr-1.5 h-2 w-2 text-orange-400" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3"/>
+                                        </svg>
+                                        Invité
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <svg class="mr-1.5 h-2 w-2 text-blue-400" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3"/>
+                                        </svg>
+                                        Inscrit
+                                    </span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Statut -->
+                            <td class="px-6 py-4 whitespace-nowrap column-status">
+                                {% if client.is_active %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3"/>
+                                        </svg>
+                                        Actif
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <svg class="mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3"/>
+                                        </svg>
+                                        Inactif
+                                    </span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Commandes -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 column-orders" style="display: none;">
+                                <div class="flex items-center">
+                                    <svg class="h-4 w-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                                    </svg>
+                                    {{ client.total_orders|default:0 }} commande{{ client.total_orders|default:0|pluralize }}
+                                </div>
+                                {% if client.total_spent %}
+                                <div class="text-xs text-gray-500">{{ client.total_spent|floatformat:2 }} DH</div>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Date création -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 column-created-at" style="display: none;">
+                                <div>{{ client.created_at|date:"d/m/Y" }}</div>
+                                <div class="text-xs text-gray-400">{{ client.created_at|date:"H:i" }}</div>
+                            </td>
+                            
+                            <!-- Actions -->
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium column-actions">
+                                <div class="flex items-center space-x-2">
+                                    <a href="{% url 'client:client_detail' client.id %}" class="text-indigo-600 hover:text-indigo-900" title="Voir détails">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    </a>
+                                    <button onclick="toggleClientStatus({{ client.id }})" 
+                                            class="{% if client.is_active %}text-red-600 hover:text-red-900{% else %}text-green-600 hover:text-green-900{% endif %}"
+                                            title="{% if client.is_active %}Désactiver{% else %}Activer{% endif %}">
+                                        {% if client.is_active %}
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                                            </svg>
+                                        {% else %}
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="text-gray-500">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun client trouvé</h3>
+                                    <p class="mt-1 text-sm text-gray-500">Commencez par créer un nouveau client.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Précédent</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Suivant</a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Affichage de 
+                            <span class="font-medium">{{ page_obj.start_index }}</span>
+                            à
+                            <span class="font-medium">{{ page_obj.end_index }}</span>
+                            sur
+                            <span class="font-medium">{{ paginator.count }}</span>
+                            résultats
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if page_obj.has_previous %}
+                                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Précédent</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <span aria-current="page" class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</span>
+                                {% else %}
+                                    <a href="?page={{ num }}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</a>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Suivant</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Actualisation des statistiques
+document.getElementById('refreshStats').addEventListener('click', function() {
+    fetch('{% url "client:clients_stats_ajax" %}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalClients').textContent = data.total_clients;
+            document.getElementById('activeClients').textContent = data.active_clients;
+            document.getElementById('inactiveClients').textContent = data.inactive_clients;
+            document.getElementById('newClients').textContent = data.new_clients;
+        });
+});
+
+// Toggle statut client
+function toggleClientStatus(clientId) {
+    if (confirm('Êtes-vous sûr de vouloir changer le statut de ce client ?')) {
+        fetch(`{% url 'client:toggle_client_status' 0 %}`.replace('0', clientId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur lors du changement de statut');
+            }
+        });
+    }
+}
+
+// Gestion de l'affichage des colonnes
+document.addEventListener('DOMContentLoaded', function() {
+    const columnToggleBtn = document.getElementById('columnToggleBtn');
+    const columnToggleMenu = document.getElementById('columnToggleMenu');
+    const columnToggles = document.querySelectorAll('.column-toggle');
+    const resetBtn = document.getElementById('resetColumns');
+    
+    // Clé pour le localStorage
+    const STORAGE_KEY = 'client_table_columns';
+    
+    // Charger les préférences sauvegardées
+    loadColumnPreferences();
+    
+    // Toggle du menu
+    columnToggleBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        columnToggleMenu.classList.toggle('hidden');
+    });
+    
+    // Fermer le menu en cliquant ailleurs
+    document.addEventListener('click', function() {
+        columnToggleMenu.classList.add('hidden');
+    });
+    
+    // Empêcher la fermeture en cliquant dans le menu
+    columnToggleMenu.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Gestion des checkboxes
+    columnToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            toggleColumn(this.dataset.column, this.checked);
+            saveColumnPreferences();
+        });
+    });
+    
+    // Réinitialiser les colonnes
+    resetBtn.addEventListener('click', function() {
+        const defaultColumns = ['client', 'email', 'phone', 'type', 'status', 'actions'];
+        
+        columnToggles.forEach(toggle => {
+            const column = toggle.dataset.column;
+            const shouldShow = defaultColumns.includes(column);
+            toggle.checked = shouldShow;
+            toggleColumn(column, shouldShow);
+        });
+        
+        saveColumnPreferences();
+    });
+    
+    function toggleColumn(columnName, show) {
+        const elements = document.querySelectorAll(`.column-${columnName}`);
+        elements.forEach(el => {
+            el.style.display = show ? '' : 'none';
+        });
+    }
+    
+    function saveColumnPreferences() {
+        const preferences = {};
+        columnToggles.forEach(toggle => {
+            preferences[toggle.dataset.column] = toggle.checked;
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+    }
+    
+    function loadColumnPreferences() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const preferences = JSON.parse(saved);
+                columnToggles.forEach(toggle => {
+                    const column = toggle.dataset.column;
+                    if (preferences.hasOwnProperty(column)) {
+                        toggle.checked = preferences[column];
+                        toggleColumn(column, preferences[column]);
+                    }
+                });
+            } catch (e) {
+                console.warn('Erreur lors du chargement des préférences de colonnes:', e);
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 
