@@ -15,7 +15,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint pour les catégories de produits.
     """
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'slug'
@@ -98,8 +98,8 @@ def nested_categories_list(request):
     
     # Itérer sur chaque type de catégorie (ex: 'sandales', 'mules')
     for type_value, type_display in category_types:
-        # Filtrer toutes les catégories qui appartiennent à ce type
-        subcategories = Category.objects.filter(type=type_value)
+        # Filtrer toutes les catégories qui appartiennent à ce type ET qui sont actives
+        subcategories = Category.objects.filter(type=type_value, is_active=True)
         
         # N'ajouter le groupe que s'il contient au moins une sous-catégorie
         if subcategories.exists():

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
@@ -295,6 +295,7 @@ function AppContent() {
                 <OrderConfirmationPage />
               </motion.div>
             } />
+
 
             {/* Redirection pour les anciennes URL */}
             <Route path="/auth" element={<Navigate to="/login" replace />} />

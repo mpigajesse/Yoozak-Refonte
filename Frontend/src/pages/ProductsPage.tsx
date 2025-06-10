@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import ProductList from '../components/ProductList';
-import { mockProducts } from '../data/mockData';
 import { List, LayoutGrid, Search } from 'lucide-react';
 import useProductFilters from '../hooks/useProductFilters';
+import { useProducts } from '../hooks/useProducts';
 
 // Définir les types associés à chaque catégorie - CORRIGÉ
 const categoryTypes = {
@@ -24,10 +24,6 @@ const categoryTypes = {
 };
 
 // Fonctions de validation
-const isValidCategory = (category: string): category is keyof typeof categoryTypes => {
-  return ['men', 'women'].includes(category);
-};
-
 const isValidType = (type: string, category: keyof typeof categoryTypes): boolean => {
   return categoryTypes[category]?.some(t => t.id === type) || false;
 };
@@ -35,6 +31,9 @@ const isValidType = (type: string, category: keyof typeof categoryTypes): boolea
 const ProductsPage: React.FC = () => {
   // Utiliser le hook personnalisé pour les filtres
   const { filters, updateFilter, resetFilters } = useProductFilters();
+  
+  // Récupérer les produits depuis l'API
+  const { products: apiProducts, loading, error } = useProducts();
   
   // États locaux pour l'UI
   const [categoryTitle, setCategoryTitle] = useState('Nos Articles');
@@ -52,13 +51,28 @@ const ProductsPage: React.FC = () => {
     setLocalPriceRange(filters.priceRange);
   }, [filters.search, filters.priceRange]);
 
+  // Utiliser directement les produits de l'API
+  const products = useMemo(() => {
+    return apiProducts;
+  }, [apiProducts]);
+
+  // Déterminer si des filtres sont actifs
+  const hasActiveFilters = useMemo(() => {
+    return filters.search.trim() || 
+           filters.category || 
+           filters.types.length > 0 || 
+           filters.priceRange[0] !== 0 || 
+           filters.priceRange[1] !== 1000 || 
+           filters.stockOnly;
+  }, [filters]);
+
   // Fonction de recherche avancée optimisée
-  const performAdvancedSearch = useCallback((products: typeof mockProducts, query: string) => {
+  const performAdvancedSearch = useCallback((products: any[], query: string) => {
     if (!query.trim()) return products;
 
     const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
     
-    return products.filter(product => {
+    return products.filter((product: any) => {
       return searchTerms.some(term => {
         return product.name.toLowerCase().includes(term) ||
                product.description.toLowerCase().includes(term) ||
@@ -72,7 +86,20 @@ const ProductsPage: React.FC = () => {
 
   // Fonction de filtrage unifiée - OPTIMISÉE
   const applyAllFilters = useCallback(() => {
-    let result = [...mockProducts];
+    let result = [...products];
+    
+    // Si aucun filtre n'est actif, retourner tous les produits
+    if (!hasActiveFilters) {
+      // Appliquer seulement le tri par défaut
+      result.sort((a, b) => {
+        if (a.isNew && !b.isNew) return -1;
+        if (!a.isNew && b.isNew) return 1;
+        if (a.isSale && !b.isSale) return -1;
+        if (!a.isSale && b.isSale) return 1;
+        return 0;
+      });
+      return result;
+    }
     
     // 1. Filtrer par recherche d'abord (plus efficace)
     if (filters.search.trim()) {
@@ -81,31 +108,34 @@ const ProductsPage: React.FC = () => {
     
     // 2. Filtrer par catégorie
     if (filters.category) {
-      result = result.filter(product => product.category === filters.category);
+      result = result.filter(product => product.gender === filters.category);
     }
 
     // 3. Filtrer par types
     if (filters.types.length > 0) {
-      result = result.filter(product => filters.types.includes(product.type));
+      result = result.filter(product => filters.types.includes((product as any).type));
     }
     
     // 4. Filtrer par gamme de prix
-    result = result.filter(product => 
-      product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
-    );
+    if (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 1000) {
+      result = result.filter(product => {
+        const price = parseFloat(product.price);
+        return price >= filters.priceRange[0] && price <= filters.priceRange[1];
+      });
+    }
     
     // 5. Filtrer par stock
     if (filters.stockOnly) {
-      result = result.filter(product => product.stock && product.stock > 0);
+      result = result.filter(product => (product as any).stock && (product as any).stock > 0);
     }
     
     // 6. Appliquer le tri
     switch (filters.sortOption) {
       case 'price_asc':
-        result.sort((a, b) => a.price - b.price);
+        result.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
         break;
       case 'price_desc':
-        result.sort((a, b) => b.price - a.price);
+        result.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
         break;
       case 'newest':
         result = result.filter(product => product.isNew)
@@ -126,7 +156,7 @@ const ProductsPage: React.FC = () => {
     }
     
     return result;
-  }, [filters, performAdvancedSearch]);
+  }, [products, filters, performAdvancedSearch, hasActiveFilters]);
 
   // Produits filtrés avec useMemo pour optimiser les performances
   const filteredProducts = useMemo(() => {
@@ -203,33 +233,6 @@ const ProductsPage: React.FC = () => {
     updateFilter('priceRange', localPriceRange);
   }, [localPriceRange, updateFilter]);
 
-  // AMÉLIORATION : Permettre de changer de catégorie en gardant les autres filtres compatibles
-  const handleCategoryChange = useCallback((category: string) => {
-    const validCategory = isValidCategory(category) ? category : null;
-    
-    if (filters.category === validCategory) {
-      // Si on clique sur la même catégorie, on la désélectionne
-      updateFilter('category', null);
-      updateFilter('types', []);
-    } else {
-      // Changement de catégorie
-      updateFilter('category', validCategory);
-      
-      // Nettoyer les types qui ne sont pas compatibles avec la nouvelle catégorie
-      if (validCategory && filters.types.length > 0) {
-        const compatibleTypes = filters.types.filter(type => 
-          isValidType(type, validCategory)
-        );
-        if (compatibleTypes.length !== filters.types.length) {
-          updateFilter('types', compatibleTypes);
-        }
-      } else if (!validCategory) {
-        // Si on désélectionne la catégorie, vider les types
-        updateFilter('types', []);
-      }
-    }
-  }, [filters.category, filters.types, updateFilter]);
-
   const handleTypeChange = useCallback((type: string) => {
     const newTypes = filters.types.includes(type) 
       ? filters.types.filter(t => t !== type) 
@@ -299,15 +302,17 @@ const ProductsPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Bouton de réinitialisation des filtres */}
-              <div className="mb-4">
-                <button
-                  onClick={resetFilters}
-                  className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
-                >
-                  Réinitialiser les filtres
-                </button>
-              </div>
+              {/* Bouton de réinitialisation des filtres - conditionnel */}
+              {hasActiveFilters && (
+                <div className="mb-4">
+                  <button
+                    onClick={resetFilters}
+                    className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                </div>
+              )}
 
               {/* Filtre de disponibilité */}
               <div>
@@ -481,7 +486,9 @@ const ProductsPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div className="flex items-center">
                 <h2 className="text-xl">
-                  {filteredProducts.length} produit{filteredProducts.length !== 1 ? 's' : ''} trouvé{filteredProducts.length !== 1 ? 's' : ''}
+                  {filteredProducts.length} produit{filteredProducts.length !== 1 ? 's' : ''} 
+                  {hasActiveFilters ? ' trouvé' : ''}{filteredProducts.length !== 1 && hasActiveFilters ? 's' : ''}
+                  {hasActiveFilters && filteredProducts.length !== products.length && ` sur ${products.length}`}
                 </h2>
               </div>
               
@@ -529,7 +536,16 @@ const ProductsPage: React.FC = () => {
             </div>
             
             {/* Affichage des produits */}
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-16">
+                <p className="text-gray-500 text-lg">Chargement des produits...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <p className="text-red-500 text-lg mb-4">Erreur: {error}</p>
+                <p className="text-gray-500">Vérifiez que le serveur backend est démarré.</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-gray-500 text-lg mb-4">Aucun produit ne correspond à vos critères</p>
                 <button

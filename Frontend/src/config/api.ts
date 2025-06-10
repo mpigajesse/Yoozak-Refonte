@@ -54,18 +54,17 @@ export const API_ENDPOINTS = {
     confirmReset: '/auth/confirm-reset-password/',
   },
   
-  // Produits
+  // Produits (endpoints réels du backend Django)
   products: {
-    list: '/products/',
-    detail: (id: string) => `/products/${id}/`,
-    search: '/products/search/',
-    categories: '/products/categories/',
-    types: '/products/types/',
-    colors: '/products/colors/',
-    sizes: '/products/sizes/',
-    featured: '/products/featured/',
-    sale: '/products/sale/',
-    new: '/products/new/',
+    list: '/inventory/products/',
+    detail: (slug: string) => `/inventory/products/${slug}/`,
+    similar: (slug: string) => `/inventory/products/${slug}/similar/`,
+  },
+  
+  // Catégories (endpoints réels du backend Django)
+  categories: {
+    nested: '/inventory/categories/nested/',
+    list: '/inventory/categories/',
   },
   
   // Avis

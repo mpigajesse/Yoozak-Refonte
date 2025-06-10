@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X, ShoppingBag, Search, User, ChevronDown } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { mockProducts, Product } from '../data/mockData';
+import { Product } from '../types/index';
 import { useCart } from '../context/CartContext';
 
 const Navbar: React.FC = () => {

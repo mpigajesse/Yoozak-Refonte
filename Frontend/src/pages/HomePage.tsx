@@ -2,15 +2,11 @@ import React, { useEffect, useState } from 'react';
 import Hero from '../components/Hero';
 import ParallaxSection from '../components/ParallaxSection';
 import Testimonials from '../components/Testimonials';
-import InfiniteProductScroll from '../components/InfiniteProductScroll';
 import AnimatedFeatures from '../components/AnimatedFeatures';
 import DiscoverMore from '../components/DiscoverMore';
-import FloatingProductsGrid from '../components/FloatingProductsGrid';
-import { mockProducts } from '../data/mockData';
 import PassionShowcase from '../components/PassionShowcase';
 
 const HomePage: React.FC = () => {
-  const topProducts = mockProducts.slice(0, 3);
   const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
@@ -34,12 +30,9 @@ const HomePage: React.FC = () => {
           </div>
         </div>
         
-        {/* Défilement infini des produits */}
-        <div className="mb-12 sm:mb-16">
-          <InfiniteProductScroll 
-            products={mockProducts} 
-            speed={30}
-          />
+        {/* Section collections - Temporairement désactivée */}
+        <div className="mb-12 sm:mb-16 text-center py-16">
+          <p className="text-gray-500">Section collections bientôt disponible</p>
         </div>
         
       </section>
@@ -47,10 +40,10 @@ const HomePage: React.FC = () => {
       {/* Passion Showcase Section */}
       <PassionShowcase />
       
-      {/* Featured Products Section */}
+      {/* Featured Products Section - Temporairement désactivée */}
       <section className="py-12 sm:py-16 lg:py-20 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <FloatingProductsGrid products={topProducts} />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-gray-500">Section produits en vedette bientôt disponible</p>
         </div>
       </section>
       
@@ -85,12 +78,8 @@ const HomePage: React.FC = () => {
           </div>
         </div>
         
-        <div className="mb-12 sm:mb-16">
-          <InfiniteProductScroll 
-            products={mockProducts.slice().reverse()} 
-            speed={40}
-            direction="right"
-          />
+        <div className="mb-12 sm:mb-16 text-center py-16">
+          <p className="text-gray-500">Section tendances bientôt disponible</p>
         </div>
       </section>
       

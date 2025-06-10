@@ -23,6 +23,7 @@ class Category(models.Model):
         verbose_name="Type de produit",
         default='sandales'
     )
+    is_active = models.BooleanField(default=True, verbose_name="Active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -116,7 +117,8 @@ class Product(models.Model):
 class ProductImage(models.Model):
     """Images des produits"""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='products/%Y/%m/', verbose_name="Image")
+    image = models.ImageField(upload_to='products/%Y/%m/', null=True, blank=True, verbose_name="Image locale")
+    image_url = models.URLField(max_length=500, null=True, blank=True, verbose_name="URL de l'image")
     alt_text = models.CharField(max_length=200, verbose_name="Texte alternatif")
     is_main = models.BooleanField(default=False, verbose_name="Image principale")
     order = models.IntegerField(default=0, verbose_name="Ordre d'affichage")
@@ -129,6 +131,15 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"Image de {self.product.name}"
+
+    @property
+    def get_image_url(self):
+        """Retourne l'URL de l'image (locale ou externe)"""
+        if self.image:
+            return self.image.url
+        elif self.image_url:
+            return self.image_url
+        return None
 
     def save(self, *args, **kwargs):
         if self.is_main:
@@ -148,12 +159,22 @@ class Stock(models.Model):
     article_name = models.CharField(max_length=255, verbose_name="Nom Article")
     color = models.CharField(max_length=50, verbose_name="Couleur", null=True, blank=True)
     size = models.CharField(max_length=10, verbose_name="Pointure", null=True, blank=True)
-    photo = models.ImageField(upload_to='stock_photos/', null=True, blank=True, verbose_name="Photo")
+    photo = models.ImageField(upload_to='stock_photos/', null=True, blank=True, verbose_name="Photo locale")
+    photo_url = models.URLField(max_length=500, null=True, blank=True, verbose_name="URL de la photo")
     quantity_available = models.IntegerField(default=0, verbose_name="Quantité Disponible")
     last_updated = models.DateTimeField(auto_now=True, verbose_name="Dernière Mise à Jour")
     
     def __str__(self):
         return f"{self.article_code} - {self.article_name} ({self.color or 'Non spécifié'}, {self.size or 'Non spécifié'})"
+    
+    @property
+    def get_photo_url(self):
+        """Retourne l'URL de la photo (locale ou externe)"""
+        if self.photo:
+            return self.photo.url
+        elif self.photo_url:
+            return self.photo_url
+        return None
     
     def delete(self, *args, **kwargs):
         if self.photo:

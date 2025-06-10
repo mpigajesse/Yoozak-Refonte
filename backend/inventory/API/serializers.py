@@ -7,10 +7,19 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'slug', 'description', 'type']
 
 class ProductImageSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(use_url=True)
+    image = serializers.SerializerMethodField()
+    
     class Meta:
         model = ProductImage
         fields = ['id', 'image', 'alt_text', 'is_main', 'order']
+        
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and obj.image.url:
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        elif obj.image_url:
+            return obj.image_url
+        return None
 
 class StockSerializer(serializers.ModelSerializer):
     class Meta:

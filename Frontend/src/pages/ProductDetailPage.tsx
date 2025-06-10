@@ -1,150 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, Share2, ChevronLeft, ChevronRight, Truck, RefreshCw, ShieldCheck, Star, MessageCircle, ThumbsUp, User, Calendar, ShoppingBag } from 'lucide-react';
-import { mockProducts, Product } from '../data/mockData';
 import { Link } from '../components/Link';
 import { useCart } from '../context/CartContext';
 import useReviewContainer, { Review } from '../containers/ReviewContainer';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useProduct } from '../hooks/useProduct';
+import { getProductImage } from '../utils/productUtils';
 
 const ProductDetailPage: React.FC = () => {
-  const [product, setProduct] = useState<Product | null>(null);
+  const { id: productSlug } = useParams<{ id: string }>();
+  const { product, similarProducts, loading, error } = useProduct(productSlug || '');
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [productId, setProductId] = useState<string>('');
   const { addToCart } = useCart();
   const navigate = useNavigate();
 
-  // Avis fictifs initiaux pour la démonstration
-  const initialReviews: Review[] = [
-    {
-      id: '1',
-      userName: 'Amina K.',
-      rating: 5,
-      date: '15 déc 2024',
-      comment: 'Excellente qualité ! Le cuir est vraiment de première qualité et très confortable. Je recommande vivement.',
-      title: 'Qualité exceptionnelle',
-      size: '39',
-      verified: true,
-      helpful: 12,
-      recommend: true
-    },
-    {
-      id: '2',
-      userName: 'Youssef M.',
-      rating: 4,
-      date: '10 déc 2024',
-      comment: 'Très belles chaussures, le design est élégant. Petit bémol sur la taille, je conseille de prendre une taille au-dessus.',
-      title: 'Beau design mais attention à la taille',
-      size: '42',
-      verified: true,
-      helpful: 8,
-      recommend: true
-    },
-    {
-      id: '3',
-      userName: 'Fatima R.',
-      rating: 5,
-      date: '5 déc 2024',
-      comment: 'Parfait ! Livraison rapide et le produit correspond exactement à la description. Très satisfaite de mon achat.',
-      title: 'Parfait, je recommande !',
-      size: '38',
-      verified: true,
-      helpful: 15,
-      recommend: true
-    },
-    {
-      id: '4',
-      userName: 'Omar B.',
-      rating: 4,
-      date: '2 déc 2024',
-      comment: 'Bonne qualité de fabrication, le cuir semble résistant. Un peu rigide au début mais ça s\'assouplit avec le temps.',
-      title: 'Bonne qualité, un peu rigide au début',
-      size: '44',
-      verified: true,
-      helpful: 6,
-      recommend: true
-    },
-    {
-      id: '5',
-      userName: 'Aicha L.',
-      rating: 5,
-      date: '28 nov 2024',
-      comment: 'Je suis très contente de cet achat ! Les chaussures sont magnifiques et très confortables dès le premier port.',
-      title: 'Magnifiques et confortables',
-      size: '40',
-      verified: true,
-      helpful: 9,
-      recommend: true
-    }
-  ];
 
-  // Fonction pour extraire l'ID du produit depuis l'URL
-  const extractProductIdFromUrl = (): string => {
-    const pathname = window.location.pathname;
-    const segments = pathname.split('/').filter(segment => segment.length > 0);
-    
-    // Si l'URL est /products/[productId], retourner le productId
-    if (segments.length >= 2 && segments[0] === 'products') {
-      return segments[1];
-    }
-    
-    // Si l'URL est juste /products ou autre, retourner une chaîne vide
-    return '';
-  };
 
   // Fonction pour ajouter un nouvel avis
   const handleReviewAdded = (newReview: Review) => {
     setReviews(prevReviews => [newReview, ...prevReviews]);
   };
 
-  // Toujours appeler le hook (respect des règles des hooks React)
+  // Hook pour les avis
   const reviewContainer = useReviewContainer({
-    productId: product?.id || 'default',
+    productId: product?.id.toString() || 'default',
     productName: product?.name || 'Produit',
-    availableSizes: ['39', '40', '41', '42', '43', '44', '45'],
+    availableSizes: product?.available_sizes || ['39', '40', '41', '42', '43', '44', '45'],
     reviews,
     onReviewAdded: handleReviewAdded
   });
 
+  // Initialiser les avis au chargement du produit
   useEffect(() => {
-    // Récupérer l'ID du produit depuis l'URL
-    const urlProductId = extractProductIdFromUrl();
-    setProductId(urlProductId);
-    
-    // Simuler un chargement asynchrone
-    setTimeout(() => {
-      let foundProduct: Product | null = null;
-      
-      if (urlProductId) {
-        foundProduct = mockProducts.find(p => p.id === urlProductId) || null;
-      }
-      
-      // Si aucun produit trouvé avec l'ID, utiliser le premier produit par défaut
-      if (!foundProduct) {
-        foundProduct = mockProducts[0] || null;
-      }
-      
-      setProduct(foundProduct);
-      
-      // Initialiser les avis
-      setReviews(initialReviews);
-      setLoading(false);
-    }, 300);
-  }, []); // Le useEffect ne dépend d'aucune variable, il s'exécute une seule fois
-
-  // Effet pour mettre à jour l'URL si nécessaire (pour le SEO et la navigation)
-  useEffect(() => {
-    if (product && productId !== product.id) {
-      // Mettre à jour l'URL sans recharger la page
-      const newUrl = `/products/${product.id}`;
-      window.history.replaceState(null, '', newUrl);
-      setProductId(product.id);
+    if (product) {
+      setReviews([]); // Vide pour l'instant, sera rempli par l'API plus tard
+      setCurrentImageIndex(0);
     }
-  }, [product, productId]);
+  }, [product]);
 
   if (loading) {
     return (
@@ -154,11 +50,13 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="container mx-auto px-4 py-16 pt-32 text-center">
         <h2 className="text-2xl font-bold mb-4">Produit non trouvé</h2>
-        <p className="mb-8 text-gray-600">Désolé, le produit que vous recherchez n'existe pas.</p>
+        <p className="mb-8 text-gray-600">
+          {error || "Désolé, le produit que vous recherchez n'existe pas."}
+        </p>
         <Link href="/products" className="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
           Retour aux produits
         </Link>
@@ -166,20 +64,12 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  // Images du produit avec quelques variations
-  const productImages = [
-    product.image,
-    "https://images.pexels.com/photos/1240892/pexels-photo-1240892.jpeg?auto=compress&cs=tinysrgb&w=1600",
-    "https://images.pexels.com/photos/267202/pexels-photo-267202.jpeg?auto=compress&cs=tinysrgb&w=1600",
-    "https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?auto=compress&cs=tinysrgb&w=1600"
-  ];
+  // Images du produit - utiliser les vraies images ou fallback
+  const productImages = product.images && product.images.length > 0 
+    ? product.images.map(img => img.image)
+    : [getProductImage(product)];
 
-  const availableSizes = ['39', '40', '41', '42', '43', '44', '45'];
-  
-  // Produits similaires
-  const relatedProducts = mockProducts.filter(p => 
-    p.category === product.category && p.id !== product.id
-  ).slice(0, 4);
+  const availableSizes = product.available_sizes || ['39', '40', '41', '42', '43', '44', '45'];
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -192,8 +82,7 @@ const ProductDetailPage: React.FC = () => {
         ...product,
         size: [selectedSize]
       };
-      addToCart(productWithSize, 1);
-      
+      addToCart(productWithSize as any, 1);
     }
   };
 
@@ -208,13 +97,8 @@ const ProductDetailPage: React.FC = () => {
         ...product,
         size: [selectedSize]
       };
-      addToCart(productWithSize, 1);
-      
-      // Utiliser le hook navigate de React Router pour la redirection
+      addToCart(productWithSize as any, 1);
       navigate('/checkout');
-      
-      // Log pour déboguer
-      console.log('Redirection vers la page de checkout');
     }
   };
 
@@ -246,6 +130,8 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+  const productPrice = parseFloat(product.price);
+  const oldPrice = product.old_price ? parseFloat(product.old_price) : productPrice * 1.3;
 
   return (
     <div className="pt-24 pb-16 bg-white">
@@ -337,7 +223,7 @@ const ProductDetailPage: React.FC = () => {
             {/* En-tête */}
             <div>
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-              <p className="text-gray-600">Chaussure premium en cuir véritable</p>
+              <p className="text-gray-600">{product.category.name} • {product.gender === 'men' ? 'Homme' : 'Femme'}</p>
               
               {/* Évaluation */}
               <div className="flex items-center mt-3 space-x-2">
@@ -350,11 +236,15 @@ const ProductDetailPage: React.FC = () => {
             
             {/* Prix */}
             <div className="flex items-baseline space-x-3">
-              <span className="text-3xl font-bold text-black">{product.price.toFixed(2)} DHS</span>
-              <span className="text-lg text-gray-500 line-through">{(product.price * 1.3).toFixed(2)} DHS</span>
+              <span className="text-3xl font-bold text-black">{productPrice.toFixed(2)} DHS</span>
+              {product.old_price && (
+                <span className="text-lg text-gray-500 line-through">{oldPrice.toFixed(2)} DHS</span>
+              )}
+              {product.is_featured && (
               <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">
-                -23%
+                  En vedette
               </span>
+              )}
             </div>
 
             {/* Avantages */}
@@ -385,7 +275,7 @@ const ProductDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium">Garantie qualité</p>
-                  <p className="text-sm text-gray-600">Cuir véritable certifié</p>
+                  <p className="text-sm text-gray-600">Matériaux de première qualité</p>
                 </div>
               </div>
             </div>
@@ -446,32 +336,36 @@ const ProductDetailPage: React.FC = () => {
             <div className="border-t pt-8">
               <h3 className="font-semibold text-lg mb-4">Description</h3>
               <div className="prose prose-gray max-w-none">
+                {product.description ? (
                 <p className="text-gray-700 leading-relaxed mb-4">
                   {product.description}
                 </p>
+                ) : (
                 <p className="text-gray-700 leading-relaxed mb-4">
-                  Ces chaussures élégantes sont fabriquées à la main avec des matériaux de première qualité. 
-                  Le cuir italien sélectionné offre une durabilité exceptionnelle et un confort optimal.
+                    Article de qualité premium fabriqué avec soin et attention aux détails.
                 </p>
+                )}
                 
                 <div className="bg-gray-50 rounded-lg p-4 mt-6">
                   <h4 className="font-medium mb-3">Caractéristiques :</h4>
                   <ul className="space-y-2 text-sm text-gray-700">
                     <li className="flex items-center">
                       <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                      Cuir véritable de première qualité
+                      Référence: {product.reference}
                     </li>
                     <li className="flex items-center">
                       <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                      Fabrication artisanale soignée
+                      Catégorie: {product.category.name}
                     </li>
+                    {product.material && (
                     <li className="flex items-center">
                       <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                      Doublure confortable et respirante
+                        Matériau: {product.material}
                     </li>
+                    )}
                     <li className="flex items-center">
                       <span className="w-2 h-2 bg-black rounded-full mr-3"></span>
-                      Semelle flexible et résistante
+                      Fabrication soignée et durable
                     </li>
                   </ul>
                 </div>
@@ -587,18 +481,18 @@ const ProductDetailPage: React.FC = () => {
       </div>
       
       {/* Produits similaires */}
-      {relatedProducts.length > 0 && (
+      {similarProducts.length > 0 && (
         <section className="mt-20 bg-gray-50 py-16">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">Vous pourriez aussi aimer</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {relatedProducts.map(relProduct => (
-                <Link key={relProduct.id} href={`/products/${relProduct.id}`} className="group">
+              {similarProducts.slice(0, 4).map(relProduct => (
+                <Link key={relProduct.id} href={`/products/${relProduct.slug}`} className="group">
                   <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                     <div className="aspect-square overflow-hidden">
                       <img 
-                        src={relProduct.image} 
+                        src={getProductImage(relProduct)} 
                         alt={relProduct.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
@@ -606,10 +500,12 @@ const ProductDetailPage: React.FC = () => {
                     <div className="p-6">
                       <h3 className="font-semibold mb-2 line-clamp-1">{relProduct.name}</h3>
                       <div className="flex items-center space-x-2">
-                        <span className="text-lg font-bold">{relProduct.price.toFixed(2)} DHS</span>
+                        <span className="text-lg font-bold">{parseFloat(relProduct.price).toFixed(2)} DHS</span>
+                        {relProduct.old_price && (
                         <span className="text-sm text-gray-500 line-through">
-                          {(relProduct.price * 1.3).toFixed(2)} DHS
+                            {parseFloat(relProduct.old_price).toFixed(2)} DHS
                         </span>
+                        )}
                       </div>
                     </div>
                   </div>

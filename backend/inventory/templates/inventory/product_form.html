@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+  <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div class="px-6 py-5 border-b border-gray-200">
+      <h1 class="text-2xl font-bold text-gray-800">{{ title }}</h1>
+      <p class="mt-1 text-sm text-gray-500">Remplissez les informations ci-dessous pour gérer le produit.</p>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="p-6 space-y-8">
+      {% csrf_token %}
+
+      <!-- Section principale -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+        <div class="md:col-span-2">
+            <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">Nom du produit</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-red-500 text-xs mt-1">{{ form.name.errors }}</div>{% endif %}
+        </div>
+        <div>
+            <label for="{{ form.reference.id_for_label }}" class="block text-sm font-medium text-gray-700">Référence</label>
+            {{ form.reference }}
+            {% if form.reference.errors %}<div class="text-red-500 text-xs mt-1">{{ form.reference.errors }}</div>{% endif %}
+        </div>
+        <div>
+            <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700">Catégorie</label>
+            {{ form.category }}
+            {% if form.category.errors %}<div class="text-red-500 text-xs mt-1">{{ form.category.errors }}</div>{% endif %}
+        </div>
+        <div class="md:col-span-2">
+            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="text-red-500 text-xs mt-1">{{ form.description.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Section Prix -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700">Prix (DH)</label>
+            {{ form.price }}
+            {% if form.price.errors %}<div class="text-red-500 text-xs mt-1">{{ form.price.errors }}</div>{% endif %}
+        </div>
+        <div>
+            <label for="{{ form.old_price.id_for_label }}" class="block text-sm font-medium text-gray-700">Ancien prix (optionnel)</label>
+            {{ form.old_price }}
+            {% if form.old_price.errors %}<div class="text-red-500 text-xs mt-1">{{ form.old_price.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Section Caractéristiques -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+            <label for="{{ form.gender.id_for_label }}" class="block text-sm font-medium text-gray-700">Genre</label>
+            {{ form.gender }}
+            {% if form.gender.errors %}<div class="text-red-500 text-xs mt-1">{{ form.gender.errors }}</div>{% endif %}
+        </div>
+        <div>
+            <label for="{{ form.colors.id_for_label }}" class="block text-sm font-medium text-gray-700">Couleurs disponibles</label>
+            {{ form.colors }}
+            <p class="text-xs text-gray-500 mt-1">Séparées par une virgule (ex: Rouge,Bleu).</p>
+            {% if form.colors.errors %}<div class="text-red-500 text-xs mt-1">{{ form.colors.errors }}</div>{% endif %}
+        </div>
+        <div>
+            <label for="{{ form.available_sizes.id_for_label }}" class="block text-sm font-medium text-gray-700">Tailles disponibles</label>
+            {{ form.available_sizes }}
+            <p class="text-xs text-gray-500 mt-1">Séparées par une virgule (ex: 39,40,41).</p>
+            {% if form.available_sizes.errors %}<div class="text-red-500 text-xs mt-1">{{ form.available_sizes.errors }}</div>{% endif %}
+        </div>
+        <div class="md:col-span-3">
+            <label for="{{ form.material.id_for_label }}" class="block text-sm font-medium text-gray-700">Matériau</label>
+            {{ form.material }}
+            {% if form.material.errors %}<div class="text-red-500 text-xs mt-1">{{ form.material.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Section Gestion des Images -->
+      <fieldset class="space-y-4 border-t border-gray-200 pt-6">
+          <legend class="text-lg font-medium leading-6 text-gray-900">Gestion des Images</legend>
+          
+          {{ formset.management_form }}
+          
+          {% if formset.non_form_errors %}
+              <div class="p-3 bg-red-100 text-red-700 rounded-md my-4">
+                  <p><strong>Veuillez corriger les erreurs suivantes :</strong></p>
+                  {{ formset.non_form_errors }}
+              </div>
+          {% endif %}
+
+          <div id="image-form-container" class="space-y-6">
+              {% for form in formset %}
+              <div class="image-form border p-4 rounded-lg bg-gray-50 relative" id="image-form-{{ forloop.counter0 }}">
+                  {% if form.errors %}
+                      <div class="p-3 bg-red-100 text-red-700 rounded-md mb-4">
+                         <p><strong>Erreurs pour cette image :</strong></p>
+                         <ul class="list-disc list-inside">
+                         {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
+                         {% endfor %}
+                         </ul>
+                      </div>
+                  {% endif %}
+
+                  {{ form.id }}
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <!-- Prévisualisation et Upload -->
+                      <div class="space-y-2">
+                          <label class="block text-sm font-medium text-gray-700">Image</label>
+                          <div class="w-32 h-32 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden">
+                                <img id="preview-{{ forloop.counter0 }}" 
+                                     src="{% if form.instance.pk and form.instance.get_image_url %}{{ form.instance.get_image_url }}{% endif %}" 
+                                     alt="Prévisualisation" 
+                                     class="w-full h-full object-cover rounded-md {% if not form.instance.pk or not form.instance.get_image_url %}hidden{% endif %}">
+                                
+                                <svg id="svg-placeholder-{{ forloop.counter0 }}" 
+                                     class="w-16 h-16 text-gray-400 {% if form.instance.pk and form.instance.get_image_url %}hidden{% endif %}" 
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                          </div>
+                          {{ form.image }}
+                          <p class="text-xs text-gray-500 mt-1">Uploader un fichier...</p>
+                      </div>
+
+                      <!-- URL et autres champs -->
+                      <div class="space-y-4">
+                           <div>
+                              <label for="{{ form.image_url.id_for_label }}" class="block text-sm font-medium text-gray-700">...ou URL de l'image</label>
+                              {{ form.image_url }}
+                          </div>
+                          <div>
+                              <label for="{{ form.alt_text.id_for_label }}" class="block text-sm font-medium text-gray-700">Texte alternatif</label>
+                              {{ form.alt_text }}
+                          </div>
+                           <div class="flex items-center space-x-4 pt-2">
+                              <div class="flex items-center">
+                                  {{ form.is_main }}
+                                  <label for="{{ form.is_main.id_for_label }}" class="ml-2 block text-sm text-gray-900">Image principale</label>
+                              </div>
+                              {% if form.instance.pk and formset.can_delete %}
+                              <div class="flex items-center text-red-600">
+                                   {{ form.DELETE }}
+                                  <label for="{{ form.DELETE.id_for_label }}" class="ml-2 block text-sm">Supprimer</label>
+                              </div>
+                              {% endif %}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              {% endfor %}
+          </div>
+          <button type="button" id="add-image-form" class="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-500">
+              + Ajouter une autre image
+          </button>
+      </fieldset>
+
+      <!-- Section Statut -->
+      <div class="flex items-start space-x-8 border-t border-gray-200 pt-6">
+        <div class="flex items-center">
+            {{ form.is_active }}
+            <label for="{{ form.is_active.id_for_label }}" class="ml-2 block text-sm text-gray-900">Actif</label>
+        </div>
+        <div class="flex items-center">
+            {{ form.is_featured }}
+            <label for="{{ form.is_featured.id_for_label }}" class="ml-2 block text-sm text-gray-900">En vedette</label>
+        </div>
+      </div>
+       {% if form.is_active.errors %}<div class="text-red-500 text-xs mt-1">{{ form.is_active.errors }}</div>{% endif %}
+       {% if form.is_featured.errors %}<div class="text-red-500 text-xs mt-1">{{ form.is_featured.errors }}</div>{% endif %}
+
+      <!-- Section SEO -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">SEO (Optionnel)</h3>
+         <div>
+            <label for="{{ form.meta_title.id_for_label }}" class="block text-sm font-medium text-gray-700">Titre META</label>
+            {{ form.meta_title }}
+            {% if form.meta_title.errors %}<div class="text-red-500 text-xs mt-1">{{ form.meta_title.errors }}</div>{% endif %}
+        </div>
+        <div>
+            <label for="{{ form.meta_description.id_for_label }}" class="block text-sm font-medium text-gray-700">Description META</label>
+            {{ form.meta_description }}
+            {% if form.meta_description.errors %}<div class="text-red-500 text-xs mt-1">{{ form.meta_description.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="pt-5 border-t border-gray-200">
+        <div class="flex justify-end space-x-3">
+          <a href="{% url 'inventory:product_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Annuler
+          </a>
+          <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="empty-form" class="hidden">
+    <div class="image-form border p-4 rounded-lg bg-gray-50 relative" id="image-form-__prefix__">
+        {{ formset.empty_form.id }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Image</label>
+                <div class="w-32 h-32 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden">
+                    <img id="preview-__prefix__" src="" alt="Prévisualisation" class="w-full h-full object-cover rounded-md hidden">
+                    <svg id="svg-placeholder-__prefix__" class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                {{ formset.empty_form.image }}
+                <p class="text-xs text-gray-500 mt-1">Uploader un fichier...</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="{{ formset.empty_form.image_url.id_for_label }}" class="block text-sm font-medium text-gray-700">...ou URL de l'image</label>
+                    {{ formset.empty_form.image_url }}
+                </div>
+                <div>
+                    <label for="{{ formset.empty_form.alt_text.id_for_label }}" class="block text-sm font-medium text-gray-700">Texte alternatif</label>
+                    {{ formset.empty_form.alt_text }}
+                </div>
+                <div class="flex items-center space-x-4 pt-2">
+                    <div class="flex items-center">
+                        {{ formset.empty_form.is_main }}
+                        <label for="{{ formset.empty_form.is_main.id_for_label }}" class="ml-2 block text-sm text-gray-900">Image principale</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('image-form-container');
+    const addButton = document.getElementById('add-image-form');
+    const emptyFormTemplate = document.getElementById('empty-form').innerHTML;
+    const totalForms = document.getElementById('id_images-TOTAL_FORMS');
+    let formNum = container.querySelectorAll('.image-form').length;
+
+    addButton.addEventListener('click', function() {
+        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum);
+        const newForm = document.createElement('div');
+        newForm.innerHTML = newFormHtml;
+        container.append(newForm.firstElementChild);
+        totalForms.value = parseInt(totalForms.value) + 1;
+        formNum++;
+    });
+
+    container.addEventListener('input', function(e) {
+        const formDiv = e.target.closest('.image-form');
+        if (!formDiv) return;
+
+        const previewImg = formDiv.querySelector('img');
+        const svgPlaceholder = formDiv.querySelector('svg');
+
+        function showPreview(src) {
+            previewImg.src = src;
+            previewImg.classList.remove('hidden');
+            if (svgPlaceholder) svgPlaceholder.classList.add('hidden');
+        }
+
+        if (e.target.type === 'file' && e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                showPreview(event.target.result);
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+        
+        if (e.target.matches('input[type="url"]')) {
+             try {
+                const url = new URL(e.target.value);
+                showPreview(url.href);
+             } catch (error) {
+                // Not a valid URL, do nothing
+             }
+        }
+    });
+
+    // Handle existing images on load
+    document.querySelectorAll('.image-form').forEach(formDiv => {
+        const previewImg = formDiv.querySelector('img');
+        if (previewImg && previewImg.src && !previewImg.src.endsWith('/')) {
+             previewImg.classList.remove('hidden');
+             const svgPlaceholder = formDiv.querySelector('svg');
+             if (svgPlaceholder) svgPlaceholder.classList.add('hidden');
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -66,31 +66,38 @@
                     <!-- Photo et quantité -->
                     <div class="space-y-6">
                         <div>
-                            <label for="{{ form.photo.id_for_label }}" class="block text-sm font-medium text-gray-700">Photo</label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <label class="block text-sm font-medium text-gray-700">Photo</label>
+                            
+                            <!-- Zone de Drag & Drop -->
+                            <div id="dropzone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-indigo-500 transition-colors">
                                 <div class="space-y-1 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                    <div class="flex text-sm text-gray-600">
-                                        <label for="{{ form.photo.id_for_label }}" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                            {% render_field form.photo class="sr-only" %}
-                                            <span>Télécharger une photo</span>
-                                        </label>
-                                        <p class="pl-1">ou glisser-déposer</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500">PNG, JPG jusqu'à 10MB</p>
+                                    {% with photo_url=form.instance.get_photo_url %}
+                                        <div id="upload-icon" {% if photo_url %}class="hidden"{% endif %}>
+                                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                        </div>
+                                        <div id="preview-container" {% if not photo_url %}class="hidden"{% endif %}>
+                                            <img id="image-preview" src="{{ photo_url|default:'' }}" class="mx-auto h-32 w-32 object-cover rounded-lg" alt="Aperçu">
+                                        </div>
+                                        <div class="flex text-sm text-gray-600">
+                                            <label for="{{ form.photo.id_for_label }}" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                                {% render_field form.photo class="hidden" id="photo-input" %}
+                                                <span id="upload-text">{% if photo_url %}Changer la photo{% else %}Télécharger une photo{% endif %}</span>
+                                            </label>
+                                            <p class="pl-1">ou glisser-déposer</p>
+                                        </div>
+                                        <p class="text-xs text-gray-500">PNG, JPG jusqu'à 10MB</p>
+                                    {% endwith %}
                                 </div>
                             </div>
-                            {% if form.instance.photo %}
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500">Photo actuelle :</p>
-                                    <img src="{{ form.instance.photo.url }}" alt="{{ form.instance.article_name }}" class="mt-2 h-32 w-32 object-cover rounded-lg">
-                                </div>
-                            {% endif %}
-                            {% for error in form.photo.errors %}
-                                <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-                            {% endfor %}
+                            
+                            <!-- Champ URL -->
+                            <div class="mt-4">
+                                <label for="{{ form.photo_url.id_for_label }}" class="block text-sm font-medium text-gray-700">Ou coller une URL d'image</label>
+                                {% render_field form.photo_url class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %}
+                            </div>
+
+                            {% for error in form.photo.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
+                            {% for error in form.photo_url.errors %}<p class="mt-2 text-sm text-red-600">{{ error }}</p>{% endfor %}
                         </div>
 
                         <div>
@@ -116,4 +123,85 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropzone = document.getElementById('dropzone');
+    const photoInput = document.getElementById('photo-input');
+    const photoUrlInput = document.getElementById('{{ form.photo_url.id_for_label }}');
+    const uploadIcon = document.getElementById('upload-icon');
+    const previewContainer = document.getElementById('preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const uploadText = document.getElementById('upload-text');
+
+    // Fonction pour afficher la prévisualisation
+    function showPreview(src) {
+        imagePreview.src = src;
+        uploadIcon.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+        uploadText.textContent = 'Changer la photo';
+    }
+    
+    // Gérer le changement de fichier via l'input
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                showPreview(e.target.result);
+                photoUrlInput.value = ''; // Vider le champ URL si un fichier est choisi
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Gérer le changement via l'URL
+    photoUrlInput.addEventListener('input', function(e) {
+        const url = e.target.value;
+        if (url) {
+            showPreview(url);
+            photoInput.value = ''; // Vider l'input fichier si une URL est entrée
+        }
+    });
+
+    // Gérer le drag & drop
+    dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('border-indigo-500', 'bg-indigo-50');
+    });
+
+    dropzone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-indigo-500', 'bg-indigo-50');
+    });
+
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                photoInput.files = files;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    showPreview(e.target.result);
+                    photoUrlInput.value = ''; // Vider le champ URL
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Veuillez sélectionner un fichier image (PNG, JPG, etc.)');
+            }
+        }
+    });
+
+    // Permettre de cliquer sur la zone pour ouvrir le sélecteur de fichier
+    dropzone.addEventListener('click', function(e) {
+        if (e.target !== photoInput) {
+            photoInput.click();
+        }
+    });
+});
+</script>
 {% endblock %} 

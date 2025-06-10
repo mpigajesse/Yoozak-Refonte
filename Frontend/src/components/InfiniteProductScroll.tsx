@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Product } from '../data/mockData';
+import { Product } from '../types';
 
 interface InfiniteProductScrollProps {
   products: Product[];
@@ -21,8 +21,8 @@ const InfiniteProductScroll: React.FC<InfiniteProductScrollProps> = ({
   const navigate = useNavigate();
 
   const handleProductClick = (product: Product) => {
-    // Rediriger vers la page de détail du produit spécifique
-    navigate(`/products/${product.id}`);
+    // Rediriger vers la page de détail du produit spécifique (utilise slug maintenant)
+    navigate(`/products/${product.slug}`);
   };
 
   useEffect(() => {

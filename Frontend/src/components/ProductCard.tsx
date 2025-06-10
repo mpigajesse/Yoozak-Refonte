@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, StarHalf } from 'lucide-react';
-import { Product } from '../data/mockData';
+import { Product } from '../types/index';
 import { useCart } from '../context/CartContext';
 import '../styles/transitions.css';
 
@@ -105,7 +105,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {product.name}
           </h3>
           <p className="mb-2 text-sm text-gray-600 line-clamp-2">
-            {product.description}
+            {(product as any).description || 'Article de qualité premium'}
           </p>
         </Link>
           
@@ -114,11 +114,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-gray-900">
-                {product.price.toFixed(2)} DHS
+                {parseFloat(product.price).toFixed(2)} DHS
               </span>
               {product.isSale && (
                 <span className="text-sm text-gray-500 line-through">
-                  {(product.price * (1 + product.discount! / 100)).toFixed(2)} DHS
+                  {(parseFloat(product.price) * (1 + product.discount! / 100)).toFixed(2)} DHS
                 </span>
               )}
             </div>
@@ -128,7 +128,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   {renderRatingStars(product.rating)}
                 </div>
                 <span className="text-sm text-gray-500">
-                  ({product.reviews})
+                  ({product.reviewsCount || 0})
                 </span>
               </div>
             )}
@@ -138,20 +138,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Stock et catégorie */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-gray-500 capitalize">
-            {product.category}
+            {product.category.name}
           </span>
-          {product.stock !== undefined && (
+          {product.stock_status !== undefined && (
             <span className={`text-sm font-medium ${
-              product.stock > 10 
+              product.stock_status === 'in_stock' 
                 ? 'text-green-600' 
-                : product.stock > 0 
+                : product.stock_status === 'low_stock' 
                   ? 'text-orange-500' 
                   : 'text-red-500'
             }`}>
-              {product.stock > 10 
+              {product.stock_status === 'in_stock' 
                 ? 'En stock' 
-                : product.stock > 0 
-                  ? `Plus que ${product.stock} en stock`
+                : product.stock_status === 'low_stock' 
+                  ? 'Stock limité'
                   : 'Rupture de stock'}
             </span>
           )}
@@ -161,7 +161,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div className="flex items-center justify-between">
           {/* Tailles disponibles */}
           <div className="flex flex-wrap gap-1">
-            {product.size?.slice(0, 3).map((size) => (
+            {(product as any).available_sizes?.slice(0, 3).map((size: string) => (
               <span 
                 key={size}
                 className="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600"
@@ -169,9 +169,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 {size}
               </span>
             ))}
-            {product.size && product.size.length > 3 && (
+            {(product as any).available_sizes && (product as any).available_sizes.length > 3 && (
               <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                +{product.size.length - 3}
+                +{(product as any).available_sizes.length - 3}
               </span>
             )}
           </div>
@@ -179,9 +179,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Bouton panier */}
           <button 
             onClick={() => addToCart(product)}
-            disabled={!product.stock}
+            disabled={product.stock_status === 'out_of_stock'}
             className={`rounded-full p-2 text-white shadow-sm transition-all duration-200 hover:scale-110 active:scale-95 ${
-              product.stock 
+              product.stock_status !== 'out_of_stock'
                 ? 'bg-black hover:bg-gray-800' 
                 : 'bg-gray-400 cursor-not-allowed'
             }`}

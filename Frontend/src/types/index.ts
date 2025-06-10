@@ -15,27 +15,59 @@ export interface User {
   lastLogin?: string;
 }
 
-export interface Product {
-  id: string;
+// Interface pour les images de produits (correspond au modèle Django ProductImage)
+export interface ProductImage {
+  id: number;
+  image: string; // URL complète de l'image
+  alt_text?: string;
+  is_main: boolean;
+  order: number;
+}
+
+// Interface pour les catégories (correspond au modèle Django Category)
+export interface Category {
+  id: number;
   name: string;
-  category: 'men' | 'women';
-  type: 'sandale' | 'mule' | 'sabot' | 'chaussure' | 'espadrille' | 'escarpin' | 'sac';
-  price: number;
-  image: string;
-  images?: string[];
-  description: string;
-  color?: string;
-  sizes?: string[];
-  stock: number;
-  rating: number;
-  reviewsCount: number;
-  isNew: boolean;
-  isSale: boolean;
-  discount: number;
-  features?: string[];
-  materials?: string[];
-  createdAt: string;
-  updatedAt: string;
+  slug: string;
+  description?: string;
+  type: string;
+}
+
+// Interface pour les produits - Liste (ProductListSerializer)
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  reference: string;
+  category: Category;
+  gender: 'men' | 'women' | 'unisex';
+  price: string; // Decimal field from Django
+  old_price?: string;
+  main_image?: ProductImage; // Image principale pour la liste
+  images?: ProductImage[]; // Toutes les images du produit
+  is_active: boolean;
+  is_featured: boolean;
+  stock_status: string;
+  
+  // Champs calculés pour compatibilité avec l'UI existante
+  image?: string; // URL de l'image principale
+  rating?: number;
+  reviewsCount?: number;
+  isNew?: boolean;
+  isSale?: boolean;
+  discount?: number;
+}
+
+// Interface pour les produits détaillés (ProductDetailSerializer)
+export interface ProductDetail extends Omit<Product, 'main_image'> {
+  description?: string;
+  images: ProductImage[];
+  available_sizes: string[];
+  colors: string[];
+  material?: string;
+  meta_title?: string;
+  meta_description?: string;
+  stock?: any;
 }
 
 export interface CartItem {
@@ -168,19 +200,13 @@ export interface ApiResponse<T = any> {
 }
 
 export interface ProductFilters {
-  category?: ProductCategory;
-  type?: ProductType[];
-  colors?: string[];
-  sizes?: string[];
-  priceRange?: [number, number];
-  inStock?: boolean;
-  onSale?: boolean;
-  rating?: number;
+  category__slug?: string;
+  gender?: 'men' | 'women' | 'unisex';
+  is_featured?: boolean;
   search?: string;
-  sortBy?: 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc' | 'newest' | 'rating';
+  ordering?: 'name' | '-name' | 'price' | '-price' | 'created_at' | '-created_at';
   page?: number;
   limit?: number;
-  ordering?: 'name' | '-name' | 'price' | '-price' | 'rating' | '-rating' | 'created_at' | '-created_at';
 }
 
 export interface SearchFilters {

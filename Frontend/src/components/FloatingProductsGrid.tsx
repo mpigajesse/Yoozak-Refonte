@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Product } from '../data/mockData';
+import { Product } from '../types/index';
 import { ArrowRight, ShoppingBag, Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import '../styles/transitions.css';
+import { getProductImage } from '../utils/productUtils';
 
 interface FloatingProductsGridProps {
   products: Product[];
@@ -12,8 +13,8 @@ interface FloatingProductsGridProps {
 const FloatingProductsGrid: React.FC<FloatingProductsGridProps> = ({ products }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const { addToCart } = useCart();
-  const [likedProducts, setLikedProducts] = useState<Set<string>>(new Set());
-  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
+  const [likedProducts, setLikedProducts] = useState<Set<number>>(new Set());
+  const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
   
   useEffect(() => {
     if (!gridRef.current) return;
@@ -52,7 +53,7 @@ const FloatingProductsGrid: React.FC<FloatingProductsGridProps> = ({ products })
     };
   }, []);
 
-  const toggleLike = (productId: string) => {
+  const toggleLike = (productId: number) => {
     setLikedProducts(prev => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
@@ -105,10 +106,10 @@ const FloatingProductsGrid: React.FC<FloatingProductsGridProps> = ({ products })
               onMouseEnter={() => setHoveredProduct(product.id)}
               onMouseLeave={() => setHoveredProduct(null)}
             >
-              <Link to={`/products/${product.id}`}>
+              <Link to={`/products/${product.slug}`}>
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img 
-                    src={product.image} 
+                    src={getProductImage(product)} 
                     alt={product.name}
                     className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-105"
                   />
@@ -134,20 +135,20 @@ const FloatingProductsGrid: React.FC<FloatingProductsGridProps> = ({ products })
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <Link 
-                      to={`/products/${product.id}`}
+                      to={`/products/${product.slug}`}
                       className="block text-lg sm:text-xl font-semibold mb-1 group-hover:text-gray-900 transition-colors hover:underline"
                     >
                       {product.name}
                     </Link>
                     <div className="flex items-center gap-2">
                       <span className="text-sm px-2.5 py-1 bg-gray-100 rounded-full text-gray-700">
-                        {product.category}
+                        {product.category.name}
                       </span>
                       {product.rating && (
                         <div className="flex items-center gap-1">
                           {renderRating(product.rating)}
                           <span className="text-sm text-gray-500">
-                            ({product.reviews || 0})
+                            ({product.reviewsCount || 0})
                           </span>
                         </div>
                       )}
@@ -157,29 +158,29 @@ const FloatingProductsGrid: React.FC<FloatingProductsGridProps> = ({ products })
                     {product.isSale ? (
                       <div className="flex flex-col items-end">
                         <span className="text-lg sm:text-xl font-medium text-red-500">
-                          {(product.price * (1 - product.discount! / 100)).toFixed(2)} dhs
+                          {(parseFloat(product.price) * (1 - product.discount! / 100)).toFixed(2)} dhs
                         </span>
                         <span className="text-sm text-gray-500 line-through">
-                         {product.price.toFixed(2)}  dhs
+                         {parseFloat(product.price).toFixed(2)}  dhs
                         </span>
                       </div>
                     ) : (
                       <span className="text-lg sm:text-xl font-medium text-gray-900">
-                        {product.price.toFixed(2)}  dhs
+                        {parseFloat(product.price).toFixed(2)}  dhs
                       </span>
                     )}
                   </div>
                 </div>
                 
                 <p className="text-gray-600 text-sm sm:text-base mb-4 line-clamp-2">
-                  {product.description}
+                  {(product as any).description || 'Aucune description disponible'}
                 </p>
                 
        
                 
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                   <Link 
-                    to={`/products/${product.id}`}
+                    to={`/products/${product.slug}`}
                     className="flex items-center text-black font-medium text-sm sm:text-base hover:underline transition-all group/link"
                   >
                     <span>Voir détails</span>

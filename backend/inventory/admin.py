@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Stock, Product, Category, ProductImage
 
 class ProductImageInline(admin.TabularInline):
@@ -43,10 +44,34 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    list_display = ('article_code', 'article_name', 'color', 'size', 'quantity_available', 'last_updated')
+    list_display = ('article_code', 'article_name', 'color', 'size', 'quantity_available', 'photo_preview', 'last_updated')
     list_filter = ('color', 'size')
     search_fields = ('article_code', 'article_name')
     ordering = ('article_code',)
+    readonly_fields = ('photo_preview',)
+    
+    fieldsets = (
+        ('Informations de base', {
+            'fields': ('article_code', 'article_name', 'color', 'size')
+        }),
+        ('Stock', {
+            'fields': ('quantity_available',)
+        }),
+        ('Photo', {
+            'fields': ('photo', 'photo_url', 'photo_preview'),
+            'description': 'Vous pouvez soit télécharger une photo locale, soit fournir une URL d\'image externe.'
+        })
+    )
+    
+    def photo_preview(self, obj):
+        photo_url = obj.get_photo_url
+        if photo_url:
+            return format_html(
+                '<img src="{}" width="100" height="100" style="object-fit: cover; border-radius: 5px;">',
+                photo_url
+            )
+        return "Aucune photo"
+    photo_preview.short_description = "Aperçu photo"
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
